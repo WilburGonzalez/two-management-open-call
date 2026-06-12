@@ -286,12 +286,11 @@
     <div class="check">✓</div>
     <h2 id="confirmName">You're signed in.</h2>
     <div class="queue-num" id="queueNum"></div>
-    <p>Thank you. Please wait to be seen by an agent.<br>Two Management — Milan Open Call.</p>
-    <button onclick="resetForm()">Sign in another person</button>
+    <p>Keep this screen and show your number when called.<br>Thank you — please wait to be seen by an agent.<br>Two Management — Milan Open Call.</p>
   </div>
 
   <div class="foot">
-    <a onclick="goAdmin()">Staff access</a>
+    <a onclick="goAdmin()" style="font-size:9px;color:#bbb;">Staff</a>
   </div>
 </div>
 
@@ -549,6 +548,8 @@ async function loadEntries(){
 }
 
 function goAdmin(){
+  const code=prompt('Staff passcode:');
+  if(code!=='TWO2026'){ if(code!==null) alert('Incorrect passcode.'); return; }
   document.getElementById('signinView').classList.add('hidden');
   document.getElementById('adminView').classList.remove('hidden');
   refreshAdmin();
