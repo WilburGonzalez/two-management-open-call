@@ -131,6 +131,7 @@
   .chip{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;
     border:1px solid #000;background:#fff;color:#000;padding:7px 14px;cursor:pointer;}
   .chip.active{background:#000;color:#fff;}
+  #staffSearch{flex:1;min-width:150px;border:1px solid #000;padding:8px 10px;font-size:13px;background:#fff;color:#000;}
   .dec-row{display:flex;gap:8px;margin:4px 0 10px;}
   .dec-cols{display:flex;gap:0;margin:8px 0 10px;border:1px solid #ddd;}
   .dec-col{flex:1;display:flex;flex-direction:column;gap:6px;padding:10px;}
@@ -313,6 +314,7 @@
     <div class="check">✓</div>
     <h2 id="confirmName">You're signed in.</h2>
     <div class="queue-num" id="queueNum"></div>
+    <p id="confirmNote" style="color:#b00020;font-weight:600"></p>
     <p>Keep this screen and show your number when called.<br>Thank you — please wait to be seen by an agent.<br>Two Management — Milan Open Call.</p>
   </div>
 
@@ -342,6 +344,7 @@
     <button class="chip" data-dec="Sign" onclick="setDecFilter(this)">Sign</button>
     <button class="chip" data-dec="Unsure" onclick="setDecFilter(this)">Unsure</button>
     <button class="chip" data-dec="Pass" onclick="setDecFilter(this)">Pass</button>
+    <input type="text" id="staffSearch" placeholder="Search name / # / IG" oninput="SEARCH_Q=this.value.trim().toLowerCase();refreshAdmin(true)">
   </div>
   <div class="admin-list" id="adminList">
     <div class="loading">Loading…</div>
@@ -442,17 +445,24 @@ async function submitEntry(){
   }
   const emailVal=$('email').value.trim();
   if(emailVal && !validEmail(emailVal)){ return showErr('Enter a valid email address (must include @ and a domain).'); }
+  if(!rawMobile && !emailVal){ return showErr('Please provide at least one contact: mobile or email.'); }
 
   const btn=$('submitBtn');
   btn.disabled=true; btn.textContent='Checking…';
 
-  /* duplicate protection: same first+last already signed in today */
+  /* duplicate protection: same first+last already signed in today -> show their number */
   try{
-    const existing=await loadEntries();
+    const existing=await lightEntries();
     const dup=existing.find(x=>isToday(x.ts)&&x.first.toLowerCase()===first.toLowerCase()&&x.last.toLowerCase()===last.toLowerCase());
     if(dup){
       btn.disabled=false; btn.textContent='Sign In';
-      return showErr(first+' '+last+' has already signed in today. If this is a different person, add a middle initial.');
+      $('confirmName').textContent="You're already signed in, "+first+".";
+      $('queueNum').innerHTML='<small>Your number</small>#'+dup.num;
+      $('confirmNote').textContent='';
+      $('formWrap').classList.add('hidden');
+      $('confirmWrap').classList.remove('hidden');
+      window.scrollTo(0,0);
+      return;
     }
   }catch(e){}
   btn.textContent='Saving…';
@@ -497,9 +507,13 @@ async function submitEntry(){
     const created=await createRes.json();
     const recId=created.records[0].id;
 
-    /* 2. upload selfie */
+    /* 2. upload selfie with retries */
     btn.textContent='Uploading photo…';
-    await uploadAttachment(recId,F_SELFIE,photos.selfie,'selfie-'+last.toLowerCase()+'.jpg');
+    let selfieFailed=false;
+    for(let t=0;t<3;t++){
+      try{ await uploadAttachment(recId,F_SELFIE,photos.selfie,'selfie-'+last.toLowerCase()+'.jpg'); selfieFailed=false; break; }
+      catch(err){ selfieFailed=true; if(t<2) await new Promise(r=>setTimeout(r,1500)); }
+    }
 
     /* 3. upload extra photos (best effort) */
     for(let i=0;i<photos.uploads.length;i++){
@@ -508,12 +522,12 @@ async function submitEntry(){
     }
 
     $('confirmName').textContent="You're signed in, "+first+".";
+    $('confirmNote').textContent=selfieFailed?'Your photo did not upload — please mention this at the desk.':'';
     /* queue number = continuous position among all sign-ins */
     try{
-      const all=await loadEntries();
-      const pos=all.findIndex(e=>e.id===recId)+1;
-      const num=pos>0?pos:all.length;
-      $('queueNum').innerHTML='<small>Your number</small>#'+num;
+      const all=await lightEntries();
+      const me=all.find(e=>e.id===recId);
+      $('queueNum').innerHTML='<small>Your number</small>#'+(me?me.num:all.length);
     }catch(e){ $('queueNum').innerHTML=''; }
     $('formWrap').classList.add('hidden');
     $('confirmWrap').classList.remove('hidden');
@@ -524,6 +538,25 @@ async function submitEntry(){
   }finally{
     btn.disabled=false; btn.textContent='Sign In';
   }
+}
+
+/* lightweight fetch: names + timestamps only, for counts/dup/number */
+async function lightEntries(){
+  const out=[]; let offset='';
+  do{
+    const url=API+'?pageSize=100&fields%5B%5D=First%20Name&fields%5B%5D=Last%20Name'+(offset?('&offset='+encodeURIComponent(offset)):'');
+    const res=await fetch(url,{headers:HDRS});
+    if(!res.ok) throw new Error('list '+res.status);
+    const data=await res.json();
+    (data.records||[]).forEach(r=>{
+      out.push({id:r.id,ts:new Date(r.createdTime).getTime(),
+        first:(r.fields||{})['First Name']||'',last:(r.fields||{})['Last Name']||''});
+    });
+    offset=data.offset||'';
+  }while(offset);
+  out.sort((a,b)=>a.ts-b.ts);
+  out.forEach((e,i)=>e.num=i+1);
+  return out;
 }
 
 /* upload a dataURL image to an Airtable attachment field */
@@ -607,7 +640,7 @@ function exitAdmin(){
   document.getElementById('signinView').classList.remove('hidden');
 }
 
-let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false;
+let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='';
 function toggleUnseen(){
   UNSEEN_ONLY=!UNSEEN_ONLY;
   $('unseenBtn').textContent=UNSEEN_ONLY?'Show all':'Unseen only';
@@ -622,6 +655,12 @@ function setDecFilter(btn){
 function passesFilters(e){
   if(UNSEEN_ONLY && e.seenBy && e.seenBy.length) return false;
   if(DEC_FILTER && !(e.decisions&&(e.decisions.Katie===DEC_FILTER||e.decisions.Ana===DEC_FILTER))) return false;
+  if(SEARCH_Q){
+    const name=(e.first+' '+e.last).toLowerCase();
+    const ig=(e.instagram||'').toLowerCase();
+    const numQ=SEARCH_Q.replace('#','');
+    if(!(name.includes(SEARCH_Q)||ig.includes(SEARCH_Q)||String(e.num)===numQ)) return false;
+  }
   return true;
 }
 async function refreshAdmin(quiet){
@@ -817,7 +856,11 @@ async function exportPDF(todayOnly){
     </div>
     <div class="grid">${cards}</div>
     <div class="foot">Two Management — Confidential Call Sheet</div>
-    <script>window.onload=function(){setTimeout(function(){window.print();},350);}<\/script>
+    <script>window.onload=function(){
+      var imgs=[].slice.call(document.images);
+      Promise.all(imgs.map(function(im){return im.complete?Promise.resolve():new Promise(function(r){im.onload=r;im.onerror=r;});}))
+        .then(function(){setTimeout(function(){window.print();},200);});
+    }<\/script>
   </body></html>`);
   w.document.close();
 }
@@ -969,14 +1012,13 @@ function isToday(ts){
 }
 async function updateLiveCount(){
   try{
-    const entries=await loadEntries();
+    const entries=await lightEntries();
     const today=entries.filter(e=>isToday(e.ts)).length;
     $('liveCount').textContent=today;
   }catch(e){ $('liveCount').textContent='—'; }
 }
 setTodayDate();
-updateLiveCount();
-setInterval(updateLiveCount, 20000);
+updateLiveCount();  /* once on load; refreshed after each sign-in — no polling, protects API limits */
 </script>
 </body>
 </html>
