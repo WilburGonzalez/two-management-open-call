@@ -463,7 +463,7 @@ async function submitEntry(){
   if(!BYPASS_DUP){
     try{
       const existing=await lightEntries();
-      const dup=existing.find(x=>isToday(x.ts)&&x.first.toLowerCase()===first.toLowerCase()&&x.last.toLowerCase()===last.toLowerCase());
+      const dup=existing.find(x=>x.first.toLowerCase()===first.toLowerCase()&&x.last.toLowerCase()===last.toLowerCase());
       if(dup){
         done();
         $('confirmName').textContent="You're already signed in, "+first+".";
