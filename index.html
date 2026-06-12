@@ -175,8 +175,8 @@
       </div>
     </div>
 
-    <label>Date of birth</label>
-    <input type="date" id="dob">
+    <label>Age</label>
+    <select id="age"><option value="">Select…</option></select>
 
     <div class="row">
       <div>
@@ -328,7 +328,7 @@ const UPLOAD   = "https://content.airtable.com/v0/"+BASE_ID;
 const HDRS     = { "Authorization":"Bearer "+AIRTABLE_TOKEN, "Content-Type":"application/json" };
 const F_SELFIE = "flduTuKYg9IrRqzX7";   // Selfie attachment field
 const F_PHOTOS = "fld4oYp8NReFAXDKn";   // Additional Photos attachment field
-const AGENTS   = ["Katie","Ana","Wilbur","Marta"];  // staff who mark models as seen
+const AGENTS   = ["Katie","Ana"];  // staff who mark models as seen
 
 const MAX_DIM = 900;       // max width/height of stored photo (Airtable can take bigger)
 const JPEG_Q  = 0.8;       // compression quality
@@ -419,7 +419,7 @@ async function submitEntry(){
     "First Name":first,
     "Last Name":last,
     "Gender":$('gender').value||undefined,
-    "DOB":$('dob').value||undefined,
+    "Age":$('age').value?parseInt($('age').value,10):undefined,
     "Mobile":rawMobile?($('mobileCode').value+' '+rawMobile):undefined,
     "Email":emailVal||undefined,
     "Current City":$('currentCity').value.trim()||undefined,
@@ -493,7 +493,7 @@ async function uploadAttachment(recId,fieldId,dataUrl,filename){
 function showErr(m){const e=$('formErr');e.textContent=m;e.classList.add('show');window.scrollTo(0,document.body.scrollHeight);}
 
 function resetForm(){
-  ['firstName','lastName','mobile','email','dob','currentCity','birthCountry','passportCountry','height','waist','shoe','hair','eyes','instagram','portfolio',
+  ['firstName','lastName','mobile','email','age','currentCity','birthCountry','passportCountry','height','waist','shoe','hair','eyes','instagram','portfolio',
    'motherAgent','motherAgentCountry','agMilan','agNY','agLA','agGER','agESP','agSCAN'].forEach(i=>$(i).value='');
   $('mobileCode').value='+39';
   $('gender').value='';
@@ -524,7 +524,7 @@ async function loadEntries(){
         id:r.id,
         ts:new Date(r.createdTime).getTime(),
         first:f['First Name']||'', last:f['Last Name']||'',
-        gender:f['Gender']||'', dob:f['DOB']||'',
+        gender:f['Gender']||'', age:f['Age']||'',
         mobile:f['Mobile']||'', email:f['Email']||'',
         currentCity:f['Current City']||'',
         birthCountry:f['Birth Country']||'', passportCountry:f['Passport Country']||'',
@@ -599,7 +599,7 @@ function adminCard(e,n){
   const info=document.createElement('div');info.className='cinfo';
   const stats=[];
   if(e.gender)stats.push(e.gender);
-  if(e.dob)stats.push('DOB '+e.dob);
+  if(e.age)stats.push('Age '+e.age);
   if(e.birthCountry)stats.push('Born '+e.birthCountry);
   if(e.passportCountry)stats.push('Passport '+e.passportCountry);
   if(e.height)stats.push(e.height);
@@ -661,7 +661,7 @@ async function exportPDF(){
     const dayLabel=new Date(e.ts).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
     const stats=[];
     if(e.gender)stats.push(e.gender);
-    if(e.dob)stats.push('DOB '+e.dob);
+    if(e.age)stats.push('Age '+e.age);
     if(e.birthCountry)stats.push('Born '+e.birthCountry);
     if(e.passportCountry)stats.push('Passport '+e.passportCountry);
     if(e.height)stats.push(e.height);
@@ -773,6 +773,12 @@ const COUNTRIES=["Afghanistan","Albania","Algeria","Argentina","Armenia","Austra
     const sel=$(id);
     COUNTRIES.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
   });
+})();
+
+/* ---- age dropdown 18–40 ---- */
+(function fillAge(){
+  const sel=$('age');
+  for(let a=18;a<=40;a++){ const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); }
 })();
 
 /* ---- hair & eye color dropdowns ---- */
