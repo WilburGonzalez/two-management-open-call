@@ -224,8 +224,16 @@
       </div>
     </div>
 
-    <label>Instagram</label>
-    <input type="text" id="instagram" placeholder="@handle" autocapitalize="none">
+    <div class="row">
+      <div>
+        <label>Instagram</label>
+        <input type="text" id="instagram" placeholder="@handle" autocapitalize="none">
+      </div>
+      <div>
+        <label>Portfolio / book link</label>
+        <input type="text" id="portfolio" placeholder="models.com/…" autocapitalize="none" inputmode="url">
+      </div>
+    </div>
 
     <div class="eyebrow">Representation</div>
 
@@ -257,7 +265,7 @@
     <div class="photo-block">
       <div class="photo-btns">
         <div class="pbtn req" onclick="document.getElementById('selfieInput').click()">📷 Selfie · required</div>
-        <div class="pbtn" onclick="document.getElementById('uploadInput').click()">⬆ Upload photo</div>
+        <div class="pbtn" onclick="document.getElementById('uploadInput').click()">⬆ Upload digitals</div>
       </div>
       <input type="file" id="selfieInput" accept="image/*" capture="user" class="hidden">
       <input type="file" id="uploadInput" accept="image/*" multiple class="hidden">
@@ -417,6 +425,7 @@ async function submitEntry(){
     "Hair":$('hair').value||undefined,
     "Eyes":$('eyes').value||undefined,
     "Instagram":$('instagram').value.trim()||undefined,
+    "Portfolio Link":(function(){let v=$('portfolio').value.trim();if(!v)return undefined;if(!/^https?:\/\//i.test(v))v='https://'+v;return v;})(),
     "Mother Agent":$('motherAgent').value.trim()||undefined,
     "Mother Agent Country":$('motherAgentCountry').value||undefined,
     "Milan Agency":$('agMilan').value.trim()||undefined,
@@ -478,7 +487,7 @@ async function uploadAttachment(recId,fieldId,dataUrl,filename){
 function showErr(m){const e=$('formErr');e.textContent=m;e.classList.add('show');window.scrollTo(0,document.body.scrollHeight);}
 
 function resetForm(){
-  ['firstName','lastName','mobile','email','dob','currentCity','birthCountry','passportCountry','height','waist','shoe','hair','eyes','instagram',
+  ['firstName','lastName','mobile','email','dob','currentCity','birthCountry','passportCountry','height','waist','shoe','hair','eyes','instagram','portfolio',
    'motherAgent','motherAgentCountry','agMilan','agNY','agLA','agGER','agESP','agSCAN'].forEach(i=>$(i).value='');
   $('mobileCode').value='+39';
   $('gender').value='';
@@ -517,6 +526,7 @@ async function loadEntries(){
         waist:f['Waist']||'', shoe:f['Shoe']||'',
         hair:f['Hair']||'', eyes:f['Eyes']||'',
         instagram:f['Instagram']||'',
+        portfolio:f['Portfolio Link']||'',
         motherAgent:f['Mother Agent']||'', motherAgentCountry:f['Mother Agent Country']||'',
         agMilan:f['Milan Agency']||'', agNY:f['NY Agency']||'', agLA:f['LA Agency']||'',
         agGER:f['German Agency']||'', agESP:f['Spain Agency']||'', agSCAN:f['Scandinavia Agency']||'',
@@ -580,6 +590,7 @@ function adminCard(e,n){
   info.innerHTML='<div class="cname"><b>#'+n+'</b> &nbsp;'+esc(e.first)+' '+esc(e.last)+'</div>'+
     '<div class="cmeta">'+esc(stats.join(' · '))+
     (e.instagram?'<br><b>IG</b> '+esc(e.instagram):'')+
+    (e.portfolio?'<br><b>Book</b> <a href="'+esc(e.portfolio)+'" target="_blank" style="color:#000">'+esc(e.portfolio.replace(/^https?:\/\//,''))+'</a>':'')+
     (e.mobile?'<br><b>Mob</b> '+esc(e.mobile):'')+
     (e.email?'<br><b>Email</b> '+esc(e.email):'')+
     (e.currentCity?'<br><b>City</b> '+esc(e.currentCity):'')+
@@ -625,6 +636,7 @@ async function exportPDF(){
           <div class="pname">#${i+1} — ${esc(e.first)} ${esc(e.last)} <span style="font-size:10px;color:#777">(${dayLabel})</span></div>
           <div class="pstats">${esc(stats.join('  ·  '))}</div>
           ${e.instagram?`<div class="prow"><span>IG</span> ${esc(e.instagram)}</div>`:''}
+          ${e.portfolio?`<div class="prow"><span>Book</span> ${esc(e.portfolio.replace(/^https?:\/\//,''))}</div>`:''}
           ${(e.mobile||e.email)?`<div class="prow"><span>Contact</span> ${esc([e.mobile,e.email].filter(Boolean).join('  ·  '))}</div>`:''}
           ${e.currentCity?`<div class="prow"><span>Current City</span> ${esc(e.currentCity)}</div>`:''}
           ${e.motherAgent?`<div class="prow"><span>Mother Agent</span> ${esc(e.motherAgent)}${e.motherAgentCountry?' ('+esc(e.motherAgentCountry)+')':''}</div>`:''}
