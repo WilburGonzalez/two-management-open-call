@@ -88,6 +88,10 @@
   .confirm .check{font-family:Georgia,serif;font-size:48px;}
   .confirm h2{font-family:Georgia,serif;font-weight:400;font-size:28px;margin:14px 0 8px;}
   .confirm p{color:var(--muted);font-size:14px;line-height:1.5;}
+  .queue-num{font-family:Georgia,serif;font-size:96px;line-height:1;margin:18px 0 22px;
+    letter-spacing:-.02em;color:#000;}
+  .queue-num small{display:block;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#777;margin-bottom:10px;}
   .confirm button{margin-top:34px;background:#fff;border:1px solid var(--ink);
     padding:14px 30px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
     font-weight:600;cursor:pointer;}
@@ -268,6 +272,7 @@
   <div class="wrap confirm hidden" id="confirmWrap">
     <div class="check">✓</div>
     <h2 id="confirmName">You're signed in.</h2>
+    <div class="queue-num" id="queueNum"></div>
     <p>Thank you. Please wait to be seen by an agent.<br>Two Management — Milan Open Call.</p>
     <button onclick="resetForm()">Sign in another person</button>
   </div>
@@ -442,6 +447,14 @@ async function submitEntry(){
     }
 
     $('confirmName').textContent="You're signed in, "+first+".";
+    /* queue number = position among today's sign-ins */
+    try{
+      const all=await loadEntries();
+      const todays=all.filter(e=>isToday(e.ts));
+      const pos=todays.findIndex(e=>e.id===recId)+1;
+      const num=pos>0?pos:todays.length;
+      $('queueNum').innerHTML='<small>Your number</small>#'+num;
+    }catch(e){ $('queueNum').innerHTML=''; }
     $('formWrap').classList.add('hidden');
     $('confirmWrap').classList.remove('hidden');
     window.scrollTo(0,0);
@@ -535,7 +548,12 @@ async function refreshAdmin(){
   $('adminCount').textContent=entries.length+(entries.length===1?' signed in':' signed in');
   if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
   list.innerHTML='';
-  entries.forEach((e,idx)=>list.appendChild(adminCard(e,idx+1)));
+  const dayCounters={};
+  entries.forEach(e=>{
+    const d=new Date(e.ts).toDateString();
+    dayCounters[d]=(dayCounters[d]||0)+1;
+    list.appendChild(adminCard(e,dayCounters[d]));
+  });
 }
 
 function agencyLine(e){
@@ -593,7 +611,12 @@ async function exportPDF(){
   if(!w){ alert('Allow pop-ups to export the PDF.'); return; }
 
   let cards='';
+  const pdfDayCounters={};
   entries.forEach((e,i)=>{
+    const dKey=new Date(e.ts).toDateString();
+    pdfDayCounters[dKey]=(pdfDayCounters[dKey]||0)+1;
+    const dayNum=pdfDayCounters[dKey];
+    const dayLabel=new Date(e.ts).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
     const stats=[];
     if(e.gender)stats.push(e.gender);
     if(e.dob)stats.push('DOB '+e.dob);
@@ -609,7 +632,7 @@ async function exportPDF(){
       <div class="pcard">
         <div class="pphoto">${e.selfie?`<img src="${e.selfie}">`:''}</div>
         <div class="pinfo">
-          <div class="pname">${i+1}. ${esc(e.first)} ${esc(e.last)}</div>
+          <div class="pname">#${dayNum} · ${dayLabel} — ${esc(e.first)} ${esc(e.last)}</div>
           <div class="pstats">${esc(stats.join('  ·  '))}</div>
           ${e.instagram?`<div class="prow"><span>IG</span> ${esc(e.instagram)}</div>`:''}
           ${(e.mobile||e.email)?`<div class="prow"><span>Contact</span> ${esc([e.mobile,e.email].filter(Boolean).join('  ·  '))}</div>`:''}
