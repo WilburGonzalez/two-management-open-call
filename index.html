@@ -137,7 +137,9 @@
   .dec-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
     align-self:center;min-width:46px;}
   .dec-btn.sign.on{background:#0a7d33;border-color:#0a7d33;color:#fff;}
-  .dec-btn.maybe.on{background:#b58900;border-color:#b58900;color:#fff;}
+  .dec-btn.unsure.on{background:#b58900;border-color:#b58900;color:#fff;}
+  .agent-pick{font-family:Georgia,serif;font-size:26px;background:#fff;border:none;
+    padding:18px 60px;margin:10px;cursor:pointer;}
   .dec-btn.pass.on{background:#b00020;border-color:#b00020;color:#fff;}
   .viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:50;overflow-y:auto;
     display:flex;flex-direction:column;align-items:center;padding:30px 14px;}
@@ -319,6 +321,7 @@
     <div>
       <h1>Open Call · Milan</h1>
       <div class="count" id="adminCount">0 signed in</div>
+      <div class="count" id="agentBadge" style="cursor:pointer;text-decoration:underline" onclick="switchAgent()">Viewing as —</div>
     </div>
     <div class="admin-actions">
       <button onclick="toggleUnseen()" class="ghost" id="unseenBtn">Unseen only</button>
@@ -332,7 +335,7 @@
     <span class="filter-label">Decision:</span>
     <button class="chip active" data-dec="" onclick="setDecFilter(this)">All</button>
     <button class="chip" data-dec="Sign" onclick="setDecFilter(this)">Sign</button>
-    <button class="chip" data-dec="Maybe" onclick="setDecFilter(this)">Maybe</button>
+    <button class="chip" data-dec="Unsure" onclick="setDecFilter(this)">Unsure</button>
     <button class="chip" data-dec="Pass" onclick="setDecFilter(this)">Pass</button>
   </div>
   <div class="admin-list" id="adminList">
@@ -587,13 +590,31 @@ async function loadEntries(){
   return out;
 }
 
+let CURRENT_AGENT='';
 function goAdmin(){
   const code=prompt('Staff passcode:');
   if(code!=='TWO2026'){ if(code!==null) alert('Incorrect passcode.'); return; }
-  document.getElementById('signinView').classList.add('hidden');
-  document.getElementById('adminView').classList.remove('hidden');
-  refreshAdmin();
+  showAgentPicker();
 }
+function showAgentPicker(){
+  const old=document.getElementById('agentPicker'); if(old) old.remove();
+  const v=document.createElement('div');v.className='viewer';v.id='agentPicker';
+  const t=document.createElement('div');t.className='vname';t.textContent='Who is this?';
+  v.appendChild(t);
+  AGENTS.forEach(a=>{
+    const b=document.createElement('button');b.className='agent-pick';b.textContent=a;
+    b.onclick=()=>{
+      CURRENT_AGENT=a; v.remove();
+      $('agentBadge').textContent='Viewing as '+a;
+      document.getElementById('signinView').classList.add('hidden');
+      document.getElementById('adminView').classList.remove('hidden');
+      refreshAdmin();
+    };
+    v.appendChild(b);
+  });
+  document.body.appendChild(v);
+}
+function switchAgent(){ showAgentPicker(); }
 function exitAdmin(){
   document.getElementById('adminView').classList.add('hidden');
   document.getElementById('signinView').classList.remove('hidden');
@@ -612,8 +633,8 @@ function setDecFilter(btn){
   refreshAdmin();
 }
 function passesFilters(e){
-  if(UNSEEN_ONLY && e.seenBy && e.seenBy.length) return false;
-  if(DEC_FILTER && !(e.decisions&&(e.decisions.Katie===DEC_FILTER||e.decisions.Ana===DEC_FILTER))) return false;
+  if(UNSEEN_ONLY && (e.seenBy||[]).includes(CURRENT_AGENT)) return false;
+  if(DEC_FILTER && (e.decisions&&e.decisions[CURRENT_AGENT])!==DEC_FILTER) return false;
   return true;
 }
 async function refreshAdmin(quiet){
@@ -623,10 +644,10 @@ async function refreshAdmin(quiet){
   let entries;
   try{ entries=await loadEntries(); }catch(e){ REFRESHING=false; return; }
   const sy=window.scrollY;
-  const unseen=entries.filter(e=>!(e.seenBy&&e.seenBy.length)).length;
-  const sign=entries.filter(e=>e.decisions&&(e.decisions.Katie==='Sign'||e.decisions.Ana==='Sign')).length;
-  const maybe=entries.filter(e=>e.decisions&&(e.decisions.Katie==='Maybe'||e.decisions.Ana==='Maybe')).length;
-  $('adminCount').textContent=entries.length+' signed in · '+unseen+' unseen · '+sign+' sign · '+maybe+' maybe';
+  const unseen=entries.filter(e=>!(e.seenBy||[]).includes(CURRENT_AGENT)).length;
+  const sign=entries.filter(e=>e.decisions&&e.decisions[CURRENT_AGENT]==='Sign').length;
+  const unsure=entries.filter(e=>e.decisions&&e.decisions[CURRENT_AGENT]==='Unsure').length;
+  $('adminCount').textContent=entries.length+' signed in · '+unseen+' unseen by you · '+sign+' sign · '+unsure+' unsure';
   if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; REFRESHING=false; return; }
   list.innerHTML='';
   entries.forEach(e=>{ if(passesFilters(e)) list.appendChild(adminCard(e,e.num)); });
@@ -680,52 +701,43 @@ function adminCard(e,n){
     (agencyLine(e)?'<br>'+esc(agencyLine(e)):'')+
     (e.uploads&&e.uploads.length?'<br><b>'+e.uploads.length+'</b> extra photo'+(e.uploads.length>1?'s':''):'')+
     '</div>';
-  /* per-agent decision rows */
-  AGENTS.forEach(agent=>{
-    const drow=document.createElement('div');drow.className='dec-row';
-    const lab=document.createElement('span');lab.className='dec-label';lab.textContent=agent;
-    drow.appendChild(lab);
-    [['Sign','sign'],['Maybe','maybe'],['Pass','pass']].forEach(([val,cls])=>{
-      const b=document.createElement('button');
-      const cur=(e.decisions&&e.decisions[agent])||'';
-      b.className='dec-btn '+cls+(cur===val?' on':'');
-      b.textContent=val;
-      b.onclick=async()=>{
-        b.disabled=true;
-        const next=cur===val?null:val;
-        const seenNow=(e.seenBy||[]).includes(agent)?(e.seenBy||[]):(e.seenBy||[]).concat([agent]);
-        try{
-          const res=await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,
-            body:JSON.stringify({fields:{[agent+' Decision']:next,'Seen By':next?seenNow:(e.seenBy||[])},typecast:true})});
-          if(res.ok){ e.decisions[agent]=next||''; if(next) e.seenBy=seenNow; }
-        }catch(err){}
-        refreshAdmin(true);
-      };
-      drow.appendChild(b);
-    });
-    info.appendChild(drow);
-  });
-  /* agent seen-by toggles */
-  const row=document.createElement('div');row.className='seen-row';
-  AGENTS.forEach(a=>{
+  /* current agent's row: Seen toggle + decisions */
+  const drow=document.createElement('div');drow.className='dec-row';
+  const seenActive=(e.seenBy||[]).includes(CURRENT_AGENT);
+  const sb=document.createElement('button');
+  sb.className='seen-btn'+(seenActive?' active':'');
+  sb.textContent=seenActive?'✓ Seen':'Seen';
+  sb.onclick=async()=>{
+    sb.disabled=true;
+    const cur=e.seenBy||[];
+    const next=cur.includes(CURRENT_AGENT)?cur.filter(x=>x!==CURRENT_AGENT):cur.concat([CURRENT_AGENT]);
+    try{
+      const res=await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,
+        body:JSON.stringify({fields:{'Seen By':next},typecast:true})});
+      if(res.ok){ e.seenBy=next; }
+    }catch(err){}
+    refreshAdmin(true);
+  };
+  drow.appendChild(sb);
+  [['Sign','sign'],['Unsure','unsure'],['Pass','pass']].forEach(([val,cls])=>{
     const b=document.createElement('button');
-    const active=(e.seenBy||[]).includes(a);
-    b.className='seen-btn'+(active?' active':'');
-    b.textContent=active?('✓ '+a):a;
+    const cur=(e.decisions&&e.decisions[CURRENT_AGENT])||'';
+    b.className='dec-btn '+cls+(cur===val?' on':'');
+    b.textContent=val;
     b.onclick=async()=>{
       b.disabled=true;
-      const cur=e.seenBy||[];
-      const next=cur.includes(a)?cur.filter(x=>x!==a):cur.concat([a]);
+      const next=cur===val?null:val;
+      const seenNow=(e.seenBy||[]).includes(CURRENT_AGENT)?(e.seenBy||[]):(e.seenBy||[]).concat([CURRENT_AGENT]);
       try{
         const res=await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,
-          body:JSON.stringify({fields:{'Seen By':next},typecast:true})});
-        if(res.ok){ e.seenBy=next; }
+          body:JSON.stringify({fields:{[CURRENT_AGENT+' Decision']:next,'Seen By':next?seenNow:(e.seenBy||[])},typecast:true})});
+        if(res.ok){ e.decisions[CURRENT_AGENT]=next||''; if(next) e.seenBy=seenNow; }
       }catch(err){}
-      refreshAdmin();
+      refreshAdmin(true);
     };
-    row.appendChild(b);
+    drow.appendChild(b);
   });
-  info.appendChild(row);
+  info.appendChild(drow);
   const del=document.createElement('button');del.className='cdel';del.textContent='Delete';
   del.onclick=async()=>{ if(confirm('Delete '+e.first+' '+e.last+'?')){ await fetch(API+'/'+e.id,{method:'DELETE',headers:HDRS}); refreshAdmin(); } };
   info.appendChild(del);
