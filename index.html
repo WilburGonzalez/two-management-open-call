@@ -132,9 +132,11 @@
     border:1px solid #000;background:#fff;color:#000;padding:7px 14px;cursor:pointer;}
   .chip.active{background:#000;color:#fff;}
   .dec-row{display:flex;gap:8px;margin:4px 0 10px;}
-  .dec-btn{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+  .dec-btn{font-size:12px;letter-spacing:.04em;font-weight:600;
     border:1px solid #999;background:#fff;color:#555;padding:8px 14px;cursor:pointer;}
-  .dec-btn.yes.on{background:#0a7d33;border-color:#0a7d33;color:#fff;}
+  .dec-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    align-self:center;min-width:46px;}
+  .dec-btn.sign.on{background:#0a7d33;border-color:#0a7d33;color:#fff;}
   .dec-btn.maybe.on{background:#b58900;border-color:#b58900;color:#fff;}
   .dec-btn.pass.on{background:#b00020;border-color:#b00020;color:#fff;}
   .viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:50;overflow-y:auto;
@@ -329,7 +331,7 @@
   <div class="filter-bar">
     <span class="filter-label">Decision:</span>
     <button class="chip active" data-dec="" onclick="setDecFilter(this)">All</button>
-    <button class="chip" data-dec="Yes" onclick="setDecFilter(this)">Yes</button>
+    <button class="chip" data-dec="Sign" onclick="setDecFilter(this)">Sign</button>
     <button class="chip" data-dec="Maybe" onclick="setDecFilter(this)">Maybe</button>
     <button class="chip" data-dec="Pass" onclick="setDecFilter(this)">Pass</button>
   </div>
@@ -570,7 +572,7 @@ async function loadEntries(){
         instagram:f['Instagram']||'',
         portfolio:f['Portfolio Link']||'',
         seenBy:f['Seen By']||[],
-        decision:f['Decision']||'',
+        decisions:{Katie:f['Katie Decision']||'',Ana:f['Ana Decision']||''},
         motherAgent:f['Mother Agent']||'', motherAgentCountry:f['Mother Agent Country']||'',
         agMilan:f['Milan Agency']||'', agNY:f['NY Agency']||'', agLA:f['LA Agency']||'',
         agGER:f['German Agency']||'', agESP:f['Spain Agency']||'', agSCAN:f['Scandinavia Agency']||'',
@@ -611,7 +613,7 @@ function setDecFilter(btn){
 }
 function passesFilters(e){
   if(UNSEEN_ONLY && e.seenBy && e.seenBy.length) return false;
-  if(DEC_FILTER && e.decision!==DEC_FILTER) return false;
+  if(DEC_FILTER && !(e.decisions&&(e.decisions.Katie===DEC_FILTER||e.decisions.Ana===DEC_FILTER))) return false;
   return true;
 }
 async function refreshAdmin(quiet){
@@ -622,9 +624,9 @@ async function refreshAdmin(quiet){
   try{ entries=await loadEntries(); }catch(e){ REFRESHING=false; return; }
   const sy=window.scrollY;
   const unseen=entries.filter(e=>!(e.seenBy&&e.seenBy.length)).length;
-  const yes=entries.filter(e=>e.decision==='Yes').length;
-  const maybe=entries.filter(e=>e.decision==='Maybe').length;
-  $('adminCount').textContent=entries.length+' signed in · '+unseen+' unseen · '+yes+' yes · '+maybe+' maybe';
+  const sign=entries.filter(e=>e.decisions&&(e.decisions.Katie==='Sign'||e.decisions.Ana==='Sign')).length;
+  const maybe=entries.filter(e=>e.decisions&&(e.decisions.Katie==='Maybe'||e.decisions.Ana==='Maybe')).length;
+  $('adminCount').textContent=entries.length+' signed in · '+unseen+' unseen · '+sign+' sign · '+maybe+' maybe';
   if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; REFRESHING=false; return; }
   list.innerHTML='';
   entries.forEach(e=>{ if(passesFilters(e)) list.appendChild(adminCard(e,e.num)); });
@@ -678,25 +680,31 @@ function adminCard(e,n){
     (agencyLine(e)?'<br>'+esc(agencyLine(e)):'')+
     (e.uploads&&e.uploads.length?'<br><b>'+e.uploads.length+'</b> extra photo'+(e.uploads.length>1?'s':''):'')+
     '</div>';
-  /* decision buttons */
-  const drow=document.createElement('div');drow.className='dec-row';
-  [['Yes','yes'],['Maybe','maybe'],['Pass','pass']].forEach(([val,cls])=>{
-    const b=document.createElement('button');
-    b.className='dec-btn '+cls+(e.decision===val?' on':'');
-    b.textContent=val.toUpperCase();
-    b.onclick=async()=>{
-      b.disabled=true;
-      const next=e.decision===val?null:val;
-      try{
-        const res=await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,
-          body:JSON.stringify({fields:{'Decision':next},typecast:true})});
-        if(res.ok){ e.decision=next||''; }
-      }catch(err){}
-      refreshAdmin(true);
-    };
-    drow.appendChild(b);
+  /* per-agent decision rows */
+  AGENTS.forEach(agent=>{
+    const drow=document.createElement('div');drow.className='dec-row';
+    const lab=document.createElement('span');lab.className='dec-label';lab.textContent=agent;
+    drow.appendChild(lab);
+    [['Sign','sign'],['Maybe','maybe'],['Pass','pass']].forEach(([val,cls])=>{
+      const b=document.createElement('button');
+      const cur=(e.decisions&&e.decisions[agent])||'';
+      b.className='dec-btn '+cls+(cur===val?' on':'');
+      b.textContent=val;
+      b.onclick=async()=>{
+        b.disabled=true;
+        const next=cur===val?null:val;
+        const seenNow=(e.seenBy||[]).includes(agent)?(e.seenBy||[]):(e.seenBy||[]).concat([agent]);
+        try{
+          const res=await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,
+            body:JSON.stringify({fields:{[agent+' Decision']:next,'Seen By':next?seenNow:(e.seenBy||[])},typecast:true})});
+          if(res.ok){ e.decisions[agent]=next||''; if(next) e.seenBy=seenNow; }
+        }catch(err){}
+        refreshAdmin(true);
+      };
+      drow.appendChild(b);
+    });
+    info.appendChild(drow);
   });
-  info.appendChild(drow);
   /* agent seen-by toggles */
   const row=document.createElement('div');row.className='seen-row';
   AGENTS.forEach(a=>{
@@ -747,6 +755,11 @@ function openViewer(e){
 /* =========================================================
    PDF EXPORT  — opens print-ready window, user prints to PDF
    ========================================================= */
+function decLine(e){
+  const parts=[];
+  if(e.decisions){ AGENTS.forEach(a=>{ if(e.decisions[a]) parts.push(a+': '+e.decisions[a]); }); }
+  return parts.join(' · ');
+}
 async function exportPDF(todayOnly){
   let entries=await loadEntries();
   entries=entries.filter(e=>passesFilters(e));
@@ -773,7 +786,7 @@ async function exportPDF(todayOnly){
       <div class="pcard">
         <div class="pphoto">${e.selfie?`<img src="${e.selfie}">`:''}</div>
         <div class="pinfo">
-          <div class="pname">#${e.num} — ${esc(e.first)} ${esc(e.last)} <span style="font-size:10px;color:#777">(${dayLabel})</span>${e.decision?` <span style="font-weight:700">[${esc(e.decision.toUpperCase())}]</span>`:''}</div>
+          <div class="pname">#${e.num} — ${esc(e.first)} ${esc(e.last)} <span style="font-size:10px;color:#777">(${dayLabel})</span>${decLine(e)?` <span style="font-weight:700">[${esc(decLine(e))}]</span>`:''}</div>
           <div class="pstats">${esc(stats.join('  ·  '))}</div>
           ${e.instagram?`<div class="prow"><span>IG</span> ${esc(e.instagram)}</div>`:''}
           ${e.portfolio?`<div class="prow"><span>Book</span> ${esc(e.portfolio.replace(/^https?:\/\//,''))}</div>`:''}
