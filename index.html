@@ -597,7 +597,7 @@ async function loadEntries(){
 
 function goAdmin(){
   const code=prompt('Staff passcode:');
-  if(code!=='TWO2026'){ if(code!==null) alert('Incorrect passcode.'); return; }
+  if(code!=='two'){ if(code!==null) alert('Incorrect passcode.'); return; }
   document.getElementById('signinView').classList.add('hidden');
   document.getElementById('adminView').classList.remove('hidden');
   refreshAdmin();
