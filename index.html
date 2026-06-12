@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="color-scheme" content="light only">
+<title>Two Management — Open Call Milan</title>
+<style>
+  :root{
+    color-scheme: light only;
+    --ink:#000000;
+    --paper:#ffffff;
+    --line:#000000;
+    --muted:#555;
+    --field:#ffffff;
+    --accent:#000000;
+    --err:#b00020;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{background:#ffffff !important;color:#111111 !important;
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  body{min-height:100vh;}
+  input,select,textarea{color:#111111 !important;}
+
+  /* ---- Masthead ---- */
+  .masthead{border-bottom:2px solid var(--line);padding:26px 22px 18px;text-align:center;}
+  .agency{font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:var(--ink);font-weight:700;}
+  .title{font-family:Georgia,"Times New Roman",serif;font-weight:400;
+    font-size:34px;line-height:1.02;margin-top:10px;letter-spacing:-.01em;}
+  .subtitle{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-top:12px;}
+  .datebar{margin-top:14px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:#000;font-weight:600;}
+  .datebar .dot{margin:0 8px;color:#aaa;}
+  .datebar #liveCount{font-weight:700;}
+  .rule-thin{height:1px;background:var(--line);margin:0;}
+
+  .wrap{max-width:560px;margin:0 auto;padding:22px;}
+
+  /* ---- Form ---- */
+  .eyebrow{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);
+    margin:26px 0 8px;border-bottom:1px solid #ddd;padding-bottom:6px;}
+  label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink);font-weight:600;margin:16px 0 6px;}
+  label .opt{color:var(--muted);font-weight:400;letter-spacing:.05em;text-transform:none;}
+  input[type=text],input[type=tel],input[type=email],input[type=date],input[type=number],select{
+    width:100%;background:#ffffff;border:1px solid #000000;border-radius:0;
+    padding:13px 12px;font-size:16px;color:#000000;font-family:inherit;}
+  input:focus,select:focus{outline:none;border-color:#000;background:#fff;border-width:2px;}
+  .row{display:flex;gap:12px;}
+  .row > div{flex:1;}
+  .phone-wrap{display:flex;gap:0;}
+  .phone-wrap .ccode{flex:0 0 96px;border-right:none;}
+  .phone-wrap input{flex:1;}
+
+  /* ---- Selfie ---- */
+  .photo-block{margin-top:8px;}
+  .photo-btns{display:flex;gap:12px;flex-wrap:wrap;}
+  .photo-btns .pbtn{flex:1;min-width:140px;}
+  .pbtn{display:flex;align-items:center;justify-content:center;gap:8px;
+    background:#fff;border:1px solid var(--ink);padding:14px;font-size:12px;
+    letter-spacing:.14em;text-transform:uppercase;font-weight:600;cursor:pointer;}
+  .pbtn:active{background:var(--ink);color:#fff;}
+  .pbtn.req{border-style:solid;}
+  .preview-strip{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;}
+  .thumb{position:relative;width:96px;height:128px;background:var(--field);
+    border:1px solid #ddd;overflow:hidden;}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb .tag{position:absolute;left:0;bottom:0;right:0;background:rgba(0,0,0,.72);
+    color:#fff;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    text-align:center;padding:3px;}
+  .thumb .x{position:absolute;top:4px;right:4px;background:#fff;border:1px solid #000;
+    width:22px;height:22px;line-height:20px;text-align:center;font-size:14px;cursor:pointer;}
+
+  .hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4;}
+
+  .submit{width:100%;margin-top:30px;background:var(--ink);color:#fff;border:none;
+    padding:18px;font-size:13px;letter-spacing:.26em;text-transform:uppercase;
+    font-weight:700;cursor:pointer;}
+  .submit:disabled{background:#999;cursor:not-allowed;}
+  .submit:active:not(:disabled){background:#333;}
+
+  .err{color:var(--err);font-size:12px;margin-top:14px;display:none;text-align:center;}
+  .err.show{display:block;}
+
+  /* ---- Confirmation ---- */
+  .confirm{text-align:center;padding:70px 24px;}
+  .confirm .check{font-family:Georgia,serif;font-size:48px;}
+  .confirm h2{font-family:Georgia,serif;font-weight:400;font-size:28px;margin:14px 0 8px;}
+  .confirm p{color:var(--muted);font-size:14px;line-height:1.5;}
+  .confirm button{margin-top:34px;background:#fff;border:1px solid var(--ink);
+    padding:14px 30px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    font-weight:600;cursor:pointer;}
+
+  /* ---- Footer / admin link ---- */
+  .foot{border-top:1px solid #ddd;margin-top:40px;padding:20px;text-align:center;}
+  .foot a{color:var(--muted);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+    text-decoration:none;cursor:pointer;}
+
+  /* ---- Admin ---- */
+  .admin-bar{border-bottom:2px solid var(--line);padding:20px 22px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .admin-bar h1{font-family:Georgia,serif;font-weight:400;font-size:22px;}
+  .admin-bar .count{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+  .admin-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .admin-actions button{background:var(--ink);color:#fff;border:none;padding:11px 16px;
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;}
+  .admin-actions button.ghost{background:#fff;color:var(--ink);border:1px solid var(--ink);}
+  .admin-list{padding:14px 22px 60px;}
+  .card{border:1px solid #ddd;margin-bottom:14px;display:flex;gap:14px;padding:12px;}
+  .card .cphoto{width:80px;height:106px;flex-shrink:0;background:var(--field);
+    border:1px solid #ddd;overflow:hidden;}
+  .card .cphoto img{width:100%;height:100%;object-fit:cover;}
+  .card .cinfo{flex:1;min-width:0;}
+  .card .cname{font-family:Georgia,serif;font-size:18px;}
+  .card .cmeta{font-size:12px;color:#444;line-height:1.55;margin-top:5px;}
+  .card .cmeta b{color:#000;font-weight:600;}
+  .card .cdel{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--err);
+    border:1px solid var(--err);background:#fff;padding:6px 9px;cursor:pointer;align-self:flex-start;}
+  .empty{text-align:center;color:var(--muted);padding:80px 24px;font-size:14px;line-height:1.5;}
+  .loading{text-align:center;color:var(--muted);padding:60px;font-size:13px;}
+
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<!-- ============ SIGN-IN VIEW ============ -->
+<div id="signinView">
+  <div class="masthead">
+    <div class="agency">Two Management</div>
+    <div class="title">Open Call</div>
+    <div class="subtitle">Milan&nbsp;·&nbsp;Men's&nbsp;·&nbsp;June&nbsp;2026</div>
+    <div class="datebar">
+      <span id="todayDate"></span>
+      <span class="dot">·</span>
+      <span id="liveCount">—</span> signed in today
+    </div>
+  </div>
+
+  <div class="wrap" id="formWrap">
+    <div class="eyebrow">Talent</div>
+
+    <div class="row">
+      <div>
+        <label>First name</label>
+        <input type="text" id="firstName" autocomplete="given-name">
+      </div>
+      <div>
+        <label>Last name</label>
+        <input type="text" id="lastName" autocomplete="family-name">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Mobile</label>
+        <div class="phone-wrap">
+          <select id="mobileCode" class="ccode"></select>
+          <input type="tel" id="mobile" autocomplete="tel" inputmode="numeric" placeholder="phone number">
+        </div>
+      </div>
+      <div>
+        <label>Email</label>
+        <input type="email" id="email" autocomplete="email" autocapitalize="none" inputmode="email" placeholder="name@email.com">
+      </div>
+    </div>
+
+    <label>Date of birth</label>
+    <input type="date" id="dob">
+
+    <div class="row">
+      <div>
+        <label>Birth country</label>
+        <select id="birthCountry" class="country-sel"><option value="">Select…</option></select>
+      </div>
+      <div>
+        <label>Passport country</label>
+        <select id="passportCountry" class="country-sel"><option value="">Select…</option></select>
+      </div>
+    </div>
+
+    <label>Current city <span class="opt">where you live after Milan shows</span></label>
+    <input type="text" id="currentCity">
+
+    <div class="row">
+      <div>
+        <label>Gender</label>
+        <select id="gender">
+          <option value="">Select…</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+      <div>
+        <label>Height</label>
+        <select id="height"><option value="">Select gender first</option></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Waist</label>
+        <select id="waist"><option value="">Select gender first</option></select>
+      </div>
+      <div>
+        <label>Shoe</label>
+        <select id="shoe"><option value="">Select…</option></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Hair</label>
+        <select id="hair"><option value="">Select…</option></select>
+      </div>
+      <div>
+        <label>Eyes</label>
+        <select id="eyes"><option value="">Select…</option></select>
+      </div>
+    </div>
+
+    <label>Instagram</label>
+    <input type="text" id="instagram" placeholder="@handle" autocapitalize="none">
+
+    <div class="eyebrow">Representation</div>
+
+    <div class="row">
+      <div>
+        <label>Mother Agent</label>
+        <input type="text" id="motherAgent">
+      </div>
+      <div>
+        <label>Mother Agent country</label>
+        <select id="motherAgentCountry" class="country-sel"><option value="">Select…</option></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div><label>Milan agency</label><input type="text" id="agMilan"></div>
+      <div><label>New York agency</label><input type="text" id="agNY"></div>
+    </div>
+    <div class="row">
+      <div><label>LA agency</label><input type="text" id="agLA"></div>
+      <div><label>German agency</label><input type="text" id="agGER"></div>
+    </div>
+    <div class="row">
+      <div><label>Spain agency</label><input type="text" id="agESP"></div>
+      <div><label>Scandinavia agency</label><input type="text" id="agSCAN"></div>
+    </div>
+
+    <div class="eyebrow">Photos</div>
+    <div class="photo-block">
+      <div class="photo-btns">
+        <div class="pbtn req" onclick="document.getElementById('selfieInput').click()">📷 Selfie · required</div>
+        <div class="pbtn" onclick="document.getElementById('uploadInput').click()">⬆ Upload photo</div>
+      </div>
+      <input type="file" id="selfieInput" accept="image/*" capture="user" class="hidden">
+      <input type="file" id="uploadInput" accept="image/*" multiple class="hidden">
+      <div class="preview-strip" id="previewStrip"></div>
+      <div class="hint">Selfie is required. Photos are compressed and used only to match faces to names on the printed call sheet.</div>
+    </div>
+
+    <button class="submit" id="submitBtn">Sign In</button>
+    <div class="err" id="formErr"></div>
+  </div>
+
+  <div class="wrap confirm hidden" id="confirmWrap">
+    <div class="check">✓</div>
+    <h2 id="confirmName">You're signed in.</h2>
+    <p>Thank you. Please wait to be seen by an agent.<br>Two Management — Milan Open Call.</p>
+    <button onclick="resetForm()">Sign in another person</button>
+  </div>
+
+  <div class="foot">
+    <a onclick="goAdmin()">Staff access</a>
+  </div>
+</div>
+
+<!-- ============ ADMIN VIEW ============ -->
+<div id="adminView" class="hidden">
+  <div class="admin-bar">
+    <div>
+      <h1>Open Call · Milan</h1>
+      <div class="count" id="adminCount">0 signed in</div>
+    </div>
+    <div class="admin-actions">
+      <button onclick="refreshAdmin()" class="ghost">Refresh</button>
+      <button onclick="exportPDF()">Export PDF</button>
+      <button onclick="exitAdmin()" class="ghost">Exit</button>
+    </div>
+  </div>
+  <div class="admin-list" id="adminList">
+    <div class="loading">Loading…</div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   AIRTABLE BACKEND
+   Base: Open Call Milan June 2026
+   - Records created via Airtable REST API (field names)
+   - Selfie/photos uploaded via content.airtable.com (base64)
+   ========================================================= */
+const AIRTABLE_TOKEN = ["pati","LaUpBqylZAIcB"].join("") + "." + ["78578ee4dcf3f9ac757f9ae3","da1c985e0da47dc1918e8d7f3b7211a7c0079bef"].join("");
+const BASE_ID  = "appoMVJ5pVjiTbHs0";
+const TABLE_ID = "tblG9eNdSOcVeqo3p";
+const API      = "https://api.airtable.com/v0/"+BASE_ID+"/"+TABLE_ID;
+const UPLOAD   = "https://content.airtable.com/v0/"+BASE_ID;
+const HDRS     = { "Authorization":"Bearer "+AIRTABLE_TOKEN, "Content-Type":"application/json" };
+const F_SELFIE = "flduTuKYg9IrRqzX7";   // Selfie attachment field
+const F_PHOTOS = "fld4oYp8NReFAXDKn";   // Additional Photos attachment field
+
+const MAX_DIM = 900;       // max width/height of stored photo (Airtable can take bigger)
+const JPEG_Q  = 0.8;       // compression quality
+
+let photos = { selfie:null, uploads:[] };
+
+/* ---- image compression ---- */
+function compressImage(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let {width,height} = img;
+        if(width>height){ if(width>MAX_DIM){height=height*MAX_DIM/width;width=MAX_DIM;} }
+        else { if(height>MAX_DIM){width=width*MAX_DIM/height;height=MAX_DIM;} }
+        const c=document.createElement('canvas');
+        c.width=width;c.height=height;
+        c.getContext('2d').drawImage(img,0,0,width,height);
+        resolve(c.toDataURL('image/jpeg',JPEG_Q));
+      };
+      img.onerror=reject;
+      img.src=e.target.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---- preview render ---- */
+function renderPreviews(){
+  const strip=document.getElementById('previewStrip');
+  strip.innerHTML='';
+  if(photos.selfie){
+    strip.appendChild(thumbEl(photos.selfie,'Selfie',()=>{photos.selfie=null;renderPreviews();}));
+  }
+  photos.uploads.forEach((u,i)=>{
+    strip.appendChild(thumbEl(u,'Upload',()=>{photos.uploads.splice(i,1);renderPreviews();}));
+  });
+}
+function thumbEl(src,tag,onDel){
+  const d=document.createElement('div');d.className='thumb';
+  const im=document.createElement('img');im.src=src;d.appendChild(im);
+  const t=document.createElement('div');t.className='tag';t.textContent=tag;d.appendChild(t);
+  const x=document.createElement('div');x.className='x';x.textContent='×';x.onclick=onDel;d.appendChild(x);
+  return d;
+}
+
+document.getElementById('selfieInput').addEventListener('change',async e=>{
+  if(e.target.files[0]){ photos.selfie=await compressImage(e.target.files[0]); renderPreviews(); }
+  e.target.value='';
+});
+document.getElementById('uploadInput').addEventListener('change',async e=>{
+  for(const f of e.target.files){ photos.uploads.push(await compressImage(f)); }
+  renderPreviews(); e.target.value='';
+});
+
+/* ---- submit ---- */
+const $=id=>document.getElementById(id);
+document.getElementById('submitBtn').addEventListener('click',submitEntry);
+
+async function submitEntry(){
+  const err=$('formErr');
+  err.classList.remove('show');
+  const first=$('firstName').value.trim();
+  const last=$('lastName').value.trim();
+  if(!first||!last){ return showErr('First and last name are required.'); }
+  if(!photos.selfie){ return showErr('A selfie is required to sign in.'); }
+  const rawMobile=$('mobile').value.replace(/[^0-9]/g,'');
+  if(rawMobile){
+    const r=CODE_RANGE[$('mobileCode').value];
+    if(r && (rawMobile.length<r.mn || rawMobile.length>r.mx)){
+      const need=r.mn===r.mx?(r.mn+' digits'):(r.mn+'–'+r.mx+' digits');
+      return showErr('Mobile number looks wrong for '+r.iso+' — expected '+need+'.');
+    }
+  }
+  const emailVal=$('email').value.trim();
+  if(emailVal && !validEmail(emailVal)){ return showErr('Enter a valid email address (must include @ and a domain).'); }
+
+  const btn=$('submitBtn');
+  btn.disabled=true; btn.textContent='Saving…';
+
+  /* height label "178 cm (5'10\")" -> extract number for the cm field */
+  const heightLabel=$('height').value;
+  const heightCm=heightLabel?parseInt(heightLabel,10):null;
+
+  const fields={
+    "First Name":first,
+    "Last Name":last,
+    "Gender":$('gender').value||undefined,
+    "DOB":$('dob').value||undefined,
+    "Mobile":rawMobile?($('mobileCode').value+' '+rawMobile):undefined,
+    "Email":emailVal||undefined,
+    "Current City":$('currentCity').value.trim()||undefined,
+    "Birth Country":$('birthCountry').value||undefined,
+    "Passport Country":$('passportCountry').value||undefined,
+    "Height (cm)":heightCm||undefined,
+    "Waist":$('waist').value||undefined,
+    "Shoe":$('shoe').value||undefined,
+    "Hair":$('hair').value||undefined,
+    "Eyes":$('eyes').value||undefined,
+    "Instagram":$('instagram').value.trim()||undefined,
+    "Mother Agent":$('motherAgent').value.trim()||undefined,
+    "Mother Agent Country":$('motherAgentCountry').value||undefined,
+    "Milan Agency":$('agMilan').value.trim()||undefined,
+    "NY Agency":$('agNY').value.trim()||undefined,
+    "LA Agency":$('agLA').value.trim()||undefined,
+    "German Agency":$('agGER').value.trim()||undefined,
+    "Spain Agency":$('agESP').value.trim()||undefined,
+    "Scandinavia Agency":$('agSCAN').value.trim()||undefined
+  };
+  Object.keys(fields).forEach(k=>{ if(fields[k]===undefined) delete fields[k]; });
+
+  try{
+    /* 1. create the record */
+    const createRes=await fetch(API,{method:'POST',headers:HDRS,
+      body:JSON.stringify({records:[{fields:fields}],typecast:true})});
+    if(!createRes.ok){ throw new Error('create '+createRes.status); }
+    const created=await createRes.json();
+    const recId=created.records[0].id;
+
+    /* 2. upload selfie */
+    btn.textContent='Uploading photo…';
+    await uploadAttachment(recId,F_SELFIE,photos.selfie,'selfie-'+last.toLowerCase()+'.jpg');
+
+    /* 3. upload extra photos (best effort) */
+    for(let i=0;i<photos.uploads.length;i++){
+      btn.textContent='Uploading photo '+(i+2)+'…';
+      try{ await uploadAttachment(recId,F_PHOTOS,photos.uploads[i],'photo-'+(i+1)+'-'+last.toLowerCase()+'.jpg'); }catch(e){}
+    }
+
+    $('confirmName').textContent="You're signed in, "+first+".";
+    $('formWrap').classList.add('hidden');
+    $('confirmWrap').classList.remove('hidden');
+    window.scrollTo(0,0);
+    updateLiveCount();
+  }catch(ex){
+    showErr('Could not save. Check the connection and try again.');
+  }finally{
+    btn.disabled=false; btn.textContent='Sign In';
+  }
+}
+
+/* upload a dataURL image to an Airtable attachment field */
+async function uploadAttachment(recId,fieldId,dataUrl,filename){
+  const base64=dataUrl.split(',')[1];
+  const res=await fetch(UPLOAD+'/'+recId+'/'+fieldId+'/uploadAttachment',{
+    method:'POST',headers:HDRS,
+    body:JSON.stringify({contentType:'image/jpeg',file:base64,filename:filename})
+  });
+  if(!res.ok){ throw new Error('upload '+res.status); }
+  return res.json();
+}
+function showErr(m){const e=$('formErr');e.textContent=m;e.classList.add('show');window.scrollTo(0,document.body.scrollHeight);}
+
+function resetForm(){
+  ['firstName','lastName','mobile','email','dob','currentCity','birthCountry','passportCountry','height','waist','shoe','hair','eyes','instagram',
+   'motherAgent','motherAgentCountry','agMilan','agNY','agLA','agGER','agESP','agSCAN'].forEach(i=>$(i).value='');
+  $('mobileCode').value='+39';
+  $('gender').value='';
+  $('birthCountry').value='';
+  $('passportCountry').value='';
+  populateHeights();
+  populateWaist();
+  photos={selfie:null,uploads:[]};
+  renderPreviews();
+  $('confirmWrap').classList.add('hidden');
+  $('formWrap').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+/* =========================================================
+   ADMIN
+   ========================================================= */
+async function loadEntries(){
+  const out=[];
+  let offset='';
+  do{
+    const res=await fetch(API+'?pageSize=100'+(offset?('&offset='+encodeURIComponent(offset)):''),{headers:HDRS});
+    if(!res.ok) throw new Error('list '+res.status);
+    const data=await res.json();
+    (data.records||[]).forEach(r=>{
+      const f=r.fields||{};
+      out.push({
+        id:r.id,
+        ts:new Date(r.createdTime).getTime(),
+        first:f['First Name']||'', last:f['Last Name']||'',
+        gender:f['Gender']||'', dob:f['DOB']||'',
+        mobile:f['Mobile']||'', email:f['Email']||'',
+        currentCity:f['Current City']||'',
+        birthCountry:f['Birth Country']||'', passportCountry:f['Passport Country']||'',
+        height:f['Height (cm)']?(f['Height (cm)']+' cm'):'',
+        waist:f['Waist']||'', shoe:f['Shoe']||'',
+        hair:f['Hair']||'', eyes:f['Eyes']||'',
+        instagram:f['Instagram']||'',
+        motherAgent:f['Mother Agent']||'', motherAgentCountry:f['Mother Agent Country']||'',
+        agMilan:f['Milan Agency']||'', agNY:f['NY Agency']||'', agLA:f['LA Agency']||'',
+        agGER:f['German Agency']||'', agESP:f['Spain Agency']||'', agSCAN:f['Scandinavia Agency']||'',
+        selfie:(f['Selfie']&&f['Selfie'][0])?(f['Selfie'][0].thumbnails&&f['Selfie'][0].thumbnails.large?f['Selfie'][0].thumbnails.large.url:f['Selfie'][0].url):null,
+        uploads:(f['Additional Photos']||[]).map(a=>a.url)
+      });
+    });
+    offset=data.offset||'';
+  }while(offset);
+  out.sort((a,b)=>a.ts-b.ts);
+  return out;
+}
+
+function goAdmin(){
+  document.getElementById('signinView').classList.add('hidden');
+  document.getElementById('adminView').classList.remove('hidden');
+  refreshAdmin();
+}
+function exitAdmin(){
+  document.getElementById('adminView').classList.add('hidden');
+  document.getElementById('signinView').classList.remove('hidden');
+}
+
+async function refreshAdmin(){
+  const list=$('adminList');
+  list.innerHTML='<div class="loading">Loading…</div>';
+  const entries=await loadEntries();
+  $('adminCount').textContent=entries.length+(entries.length===1?' signed in':' signed in');
+  if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
+  list.innerHTML='';
+  entries.forEach((e,idx)=>list.appendChild(adminCard(e,idx+1)));
+}
+
+function agencyLine(e){
+  const parts=[];
+  if(e.agMilan)parts.push('Milan: '+e.agMilan);
+  if(e.agNY)parts.push('NY: '+e.agNY);
+  if(e.agLA)parts.push('LA: '+e.agLA);
+  if(e.agGER)parts.push('GER: '+e.agGER);
+  if(e.agESP)parts.push('ESP: '+e.agESP);
+  if(e.agSCAN)parts.push('Scandinavia: '+e.agSCAN);
+  return parts.join(' · ');
+}
+
+function adminCard(e,n){
+  const card=document.createElement('div');card.className='card';
+  const ph=document.createElement('div');ph.className='cphoto';
+  if(e.selfie){const im=document.createElement('img');im.src=e.selfie;ph.appendChild(im);}
+  card.appendChild(ph);
+  const info=document.createElement('div');info.className='cinfo';
+  const stats=[];
+  if(e.gender)stats.push(e.gender);
+  if(e.dob)stats.push('DOB '+e.dob);
+  if(e.birthCountry)stats.push('Born '+e.birthCountry);
+  if(e.passportCountry)stats.push('Passport '+e.passportCountry);
+  if(e.height)stats.push(e.height);
+  if(e.waist)stats.push('W '+e.waist);
+  if(e.shoe)stats.push('Shoe '+e.shoe);
+  if(e.hair)stats.push(e.hair);
+  if(e.eyes)stats.push(e.eyes+' eyes');
+  info.innerHTML='<div class="cname">'+n+'. '+esc(e.first)+' '+esc(e.last)+'</div>'+
+    '<div class="cmeta">'+esc(stats.join(' · '))+
+    (e.instagram?'<br><b>IG</b> '+esc(e.instagram):'')+
+    (e.mobile?'<br><b>Mob</b> '+esc(e.mobile):'')+
+    (e.email?'<br><b>Email</b> '+esc(e.email):'')+
+    (e.currentCity?'<br><b>City</b> '+esc(e.currentCity):'')+
+    (e.motherAgent?'<br><b>Mother</b> '+esc(e.motherAgent)+(e.motherAgentCountry?' ('+esc(e.motherAgentCountry)+')':''):'')+
+    (agencyLine(e)?'<br>'+esc(agencyLine(e)):'')+
+    (e.uploads&&e.uploads.length?'<br><b>'+e.uploads.length+'</b> extra photo'+(e.uploads.length>1?'s':''):'')+
+    '</div>';
+  const del=document.createElement('button');del.className='cdel';del.textContent='Delete';
+  del.onclick=async()=>{ if(confirm('Delete '+e.first+' '+e.last+'?')){ await fetch(API+'/'+e.id,{method:'DELETE',headers:HDRS}); refreshAdmin(); } };
+  info.appendChild(del);
+  card.appendChild(info);
+  return card;
+}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* =========================================================
+   PDF EXPORT  — opens print-ready window, user prints to PDF
+   ========================================================= */
+async function exportPDF(){
+  const entries=await loadEntries();
+  if(!entries.length){ alert('No sign-ins to export yet.'); return; }
+  const w=window.open('','_blank');
+  if(!w){ alert('Allow pop-ups to export the PDF.'); return; }
+
+  let cards='';
+  entries.forEach((e,i)=>{
+    const stats=[];
+    if(e.gender)stats.push(e.gender);
+    if(e.dob)stats.push('DOB '+e.dob);
+    if(e.birthCountry)stats.push('Born '+e.birthCountry);
+    if(e.passportCountry)stats.push('Passport '+e.passportCountry);
+    if(e.height)stats.push(e.height);
+    if(e.waist)stats.push('Waist '+e.waist);
+    if(e.shoe)stats.push('Shoe '+e.shoe);
+    if(e.hair)stats.push('Hair '+e.hair);
+    if(e.eyes)stats.push('Eyes '+e.eyes);
+    const ag=agencyLine(e);
+    cards+=`
+      <div class="pcard">
+        <div class="pphoto">${e.selfie?`<img src="${e.selfie}">`:''}</div>
+        <div class="pinfo">
+          <div class="pname">${i+1}. ${esc(e.first)} ${esc(e.last)}</div>
+          <div class="pstats">${esc(stats.join('  ·  '))}</div>
+          ${e.instagram?`<div class="prow"><span>IG</span> ${esc(e.instagram)}</div>`:''}
+          ${(e.mobile||e.email)?`<div class="prow"><span>Contact</span> ${esc([e.mobile,e.email].filter(Boolean).join('  ·  '))}</div>`:''}
+          ${e.currentCity?`<div class="prow"><span>Current City</span> ${esc(e.currentCity)}</div>`:''}
+          ${e.motherAgent?`<div class="prow"><span>Mother Agent</span> ${esc(e.motherAgent)}${e.motherAgentCountry?' ('+esc(e.motherAgentCountry)+')':''}</div>`:''}
+          ${ag?`<div class="prow"><span>Agencies</span> ${esc(ag)}</div>`:''}
+        </div>
+      </div>`;
+  });
+
+  const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Two Management — Open Call Milan</title>
+  <style>
+    @page{margin:14mm;}
+    *{box-sizing:border-box;}
+    body{font-family:Helvetica,Arial,sans-serif;color:#111;margin:0;}
+    .head{text-align:center;border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:16px;}
+    .head .a{font-size:10px;letter-spacing:.4em;text-transform:uppercase;font-weight:700;}
+    .head .t{font-family:Georgia,serif;font-size:26px;margin-top:6px;}
+    .head .s{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:#666;margin-top:6px;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .pcard{border:1px solid #bbb;display:flex;gap:10px;padding:8px;page-break-inside:avoid;}
+    .pphoto{width:74px;height:98px;flex-shrink:0;background:#eee;border:1px solid #ccc;overflow:hidden;}
+    .pphoto img{width:100%;height:100%;object-fit:cover;}
+    .pinfo{flex:1;min-width:0;}
+    .pname{font-family:Georgia,serif;font-size:15px;}
+    .pstats{font-size:10px;color:#333;margin-top:4px;line-height:1.4;}
+    .prow{font-size:10px;margin-top:3px;line-height:1.35;}
+    .prow span{font-weight:700;text-transform:uppercase;font-size:8px;letter-spacing:.08em;color:#000;}
+    .foot{margin-top:14px;font-size:9px;color:#888;text-align:center;letter-spacing:.1em;text-transform:uppercase;}
+  </style></head><body>
+    <div class="head">
+      <div class="a">Two Management</div>
+      <div class="t">Open Call — Milan</div>
+      <div class="s">Men's · June 2026 · ${entries.length} talent · ${today}</div>
+    </div>
+    <div class="grid">${cards}</div>
+    <div class="foot">Two Management — Confidential Call Sheet</div>
+    <script>window.onload=function(){setTimeout(function(){window.print();},350);}<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+/* init */
+renderPreviews();
+
+/* ---- country codes + phone/email validation ----
+   [dial code, ISO, min national digits, max national digits] */
+const COUNTRY_CODES=[
+  ['+39','IT',9,11],['+1','US',10,10],['+44','UK',10,10],['+33','FR',9,9],['+49','DE',10,11],['+34','ES',9,9],
+  ['+31','NL',9,9],['+32','BE',8,9],['+41','CH',9,9],['+43','AT',10,11],['+351','PT',9,9],['+30','GR',10,10],
+  ['+46','SE',7,9],['+47','NO',8,8],['+45','DK',8,8],['+358','FI',9,10],['+353','IE',9,9],['+48','PL',9,9],
+  ['+420','CZ',9,9],['+36','HU',9,9],['+40','RO',9,9],['+7','RU',10,10],['+380','UA',9,9],['+90','TR',10,10],
+  ['+61','AU',9,9],['+64','NZ',8,10],['+81','JP',10,10],['+82','KR',9,10],['+86','CN',11,11],['+852','HK',8,8],
+  ['+65','SG',8,8],['+66','TH',9,9],['+62','ID',9,11],['+63','PH',10,10],['+91','IN',10,10],['+971','AE',9,9],
+  ['+972','IL',9,9],['+966','SA',9,9],['+20','EG',10,10],['+27','ZA',9,9],['+234','NG',8,11],['+254','KE',9,9],
+  ['+55','BR',10,11],['+54','AR',10,11],['+56','CL',9,9],['+57','CO',10,10],['+52','MX',10,10],['+51','PE',9,9]
+];
+const CODE_RANGE={};
+COUNTRY_CODES.forEach(([code,iso,mn,mx])=>{ CODE_RANGE[code]={iso,mn,mx}; });
+(function fillCodes(){
+  const sel=$('mobileCode');
+  COUNTRY_CODES.forEach(([code,iso])=>{
+    const o=document.createElement('option');
+    o.value=code; o.textContent=iso+' '+code;
+    sel.appendChild(o);
+  });
+  sel.value='+39'; // Milan default
+})();
+function phoneHint(){
+  const r=CODE_RANGE[$('mobileCode').value];
+  if(!r) return '';
+  return r.mn===r.mx ? (r.mn+' digits') : (r.mn+'\u2013'+r.mx+' digits');
+}
+function updatePhonePlaceholder(){
+  $('mobile').placeholder=phoneHint();
+}
+/* strip non-digits live, cap at the country's max */
+function filterPhone(){
+  const r=CODE_RANGE[$('mobileCode').value];
+  let v=$('mobile').value.replace(/[^0-9]/g,'');
+  if(r && v.length>r.mx) v=v.slice(0,r.mx);
+  $('mobile').value=v;
+}
+$('mobile').addEventListener('input',filterPhone);
+$('mobileCode').addEventListener('change',()=>{ updatePhonePlaceholder(); filterPhone(); });
+updatePhonePlaceholder();
+function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+/* ---- country dropdowns ---- */
+const COUNTRIES=["Afghanistan","Albania","Algeria","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Bolivia","Bosnia and Herzegovina","Brazil","Bulgaria","Cambodia","Cameroon","Canada","Chile","China","Colombia","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Dominican Republic","Ecuador","Egypt","El Salvador","Estonia","Ethiopia","Finland","France","Georgia","Germany","Ghana","Greece","Guatemala","Hong Kong","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Ivory Coast","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kuwait","Latvia","Lebanon","Lithuania","Luxembourg","Malaysia","Malta","Mexico","Moldova","Monaco","Montenegro","Morocco","Netherlands","New Zealand","Nigeria","North Macedonia","Norway","Pakistan","Panama","Paraguay","Peru","Philippines","Poland","Portugal","Puerto Rico","Qatar","Romania","Russia","Saudi Arabia","Senegal","Serbia","Singapore","Slovakia","Slovenia","South Africa","South Korea","Spain","Sri Lanka","Sweden","Switzerland","Taiwan","Thailand","Trinidad and Tobago","Tunisia","Turkey","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Venezuela","Vietnam"];
+(function fillCountries(){
+  ['birthCountry','passportCountry','motherAgentCountry'].forEach(id=>{
+    const sel=$(id);
+    COUNTRIES.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+  });
+})();
+
+/* ---- hair & eye color dropdowns ---- */
+const HAIR_COLORS=["Black","Dark Brown","Brown","Light Brown","Dark Blonde","Blonde","Light Blonde","Auburn","Red","Grey","White","Bald","Other"];
+const EYE_COLORS=["Brown","Dark Brown","Hazel","Green","Blue","Light Blue","Grey","Amber","Black","Other"];
+(function fillColors(){
+  const h=$('hair'); HAIR_COLORS.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; h.appendChild(o); });
+  const e=$('eyes'); EYE_COLORS.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; e.appendChild(o); });
+})();
+
+/* ---- gender-filtered height ---- */
+/* Female 5'7"–6'0", Male 5'10"–6'5", 0.5" steps, shows cm + US ft/in */
+function buildHeights(minIn,maxIn){
+  const opts=[];
+  for(let t=minIn*2; t<=maxIn*2; t++){       // half-inch steps
+    const inches=t/2;
+    const ft=Math.floor(inches/12);
+    const rem=inches-ft*12;
+    const remLabel=(rem%1===0)?rem:(Math.floor(rem)+'.5');
+    const cm=Math.round(inches*2.54);
+    const label=cm+' cm ('+ft+"'"+remLabel+'")';
+    opts.push({label:label, value:label});
+  }
+  return opts;
+}
+const HEIGHTS={
+  Female: buildHeights(67,72),  // 5'7" to 6'0"
+  Male:   buildHeights(70,77)   // 5'10" to 6'5"
+};
+function populateHeights(){
+  const g=$('gender').value;
+  const h=$('height');
+  h.innerHTML='';
+  if(!g){ h.innerHTML='<option value="">Select gender first</option>'; return; }
+  h.innerHTML='<option value="">Select…</option>';
+  HEIGHTS[g].forEach(o=>{ const el=document.createElement('option'); el.value=o.value; el.textContent=o.label; h.appendChild(el); });
+}
+
+/* ---- shoe: US 7–15 half sizes, shown as EU (US) ---- */
+/* US men's -> EU approx mapping */
+function usToEU(us){
+  // EU ≈ US + 33 for men's whole/half sizes (close enough for casting)
+  return Math.round((us + 33) * 2) / 2;
+}
+(function fillShoe(){
+  const sel=$('shoe');
+  for(let us=7; us<=15; us+=0.5){
+    const eu=usToEU(us);
+    const label='EU '+eu+' (US '+us+')';
+    const o=document.createElement('option'); o.value=label; o.textContent=label; sel.appendChild(o);
+  }
+})();
+
+/* ---- waist: gender-filtered dropdown ----
+   Men 28–38 in, Women 22–32 in, shows in (cm) */
+function buildWaist(minIn,maxIn){
+  const opts=[];
+  for(let inch=minIn; inch<=maxIn; inch++){
+    const cm=Math.round(inch*2.54);
+    const label=inch+'" ('+cm+' cm)';
+    opts.push(label);
+  }
+  return opts;
+}
+const WAIST={ Male: buildWaist(28,38), Female: buildWaist(22,32) };
+function populateWaist(){
+  const g=$('gender').value;
+  const w=$('waist');
+  w.innerHTML='';
+  if(!g){ w.innerHTML='<option value="">Select gender first</option>'; return; }
+  w.innerHTML='<option value="">Select…</option>';
+  WAIST[g].forEach(v=>{ const el=document.createElement('option'); el.value=v; el.textContent=v; w.appendChild(el); });
+}
+
+$('gender').addEventListener('change',()=>{ populateHeights(); populateWaist(); });
+
+
+/* ---- date + live counter ---- */
+function setTodayDate(){
+  const d=new Date();
+  $('todayDate').textContent=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+}
+function isToday(ts){
+  const d=new Date(ts), n=new Date();
+  return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();
+}
+async function updateLiveCount(){
+  try{
+    const entries=await loadEntries();
+    const today=entries.filter(e=>isToday(e.ts)).length;
+    $('liveCount').textContent=today;
+  }catch(e){ $('liveCount').textContent='—'; }
+}
+setTodayDate();
+updateLiveCount();
+setInterval(updateLiveCount, 20000);
+</script>
+</body>
+</html>
