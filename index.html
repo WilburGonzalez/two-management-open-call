@@ -315,6 +315,7 @@
     <h2 id="confirmName">You're signed in.</h2>
     <div class="queue-num" id="queueNum"></div>
     <p id="confirmNote" style="color:#b00020;font-weight:600"></p>
+    <button id="notMeBtn" class="hidden" onclick="notMe()">This is not me — sign in as a new person</button>
     <p>Keep this screen and show your number when called.<br>Thank you — please wait to be seen by an agent.<br>Two Management — Milan Open Call.</p>
   </div>
 
@@ -424,6 +425,7 @@ document.getElementById('selfieInput').addEventListener('change',async e=>{
 });
 document.getElementById('uploadInput').addEventListener('change',async e=>{
   for(const f of e.target.files){
+    if(photos.uploads.length>=6){ alert('Maximum 6 photos — the rest were skipped.'); break; }
     try{ photos.uploads.push(await compressImage(f,UPLOAD_DIM,UPLOAD_Q)); }
     catch(err){ alert('One photo could not be read and was skipped. JPG or PNG works best.'); }
   }
@@ -434,7 +436,15 @@ document.getElementById('uploadInput').addEventListener('change',async e=>{
 const $=id=>document.getElementById(id);
 document.getElementById('submitBtn').addEventListener('click',submitEntry);
 
-let SUBMITTING=false;
+let SUBMITTING=false, BYPASS_DUP=false;
+function notMe(){
+  BYPASS_DUP=true;
+  $('notMeBtn').classList.add('hidden');
+  $('confirmWrap').classList.add('hidden');
+  $('formWrap').classList.remove('hidden');
+  window.scrollTo(0,0);
+  showErr('Tap Sign In again to register as a new person with this name.');
+}
 async function submitEntry(){
   if(SUBMITTING) return;            // double-tap guard
   SUBMITTING=true;
@@ -450,20 +460,24 @@ async function submitEntry(){
   btn.disabled=true; btn.textContent='Checking…';
 
   /* duplicate check FIRST: returning models retrieve their number with just their name */
-  try{
-    const existing=await lightEntries();
-    const dup=existing.find(x=>isToday(x.ts)&&x.first.toLowerCase()===first.toLowerCase()&&x.last.toLowerCase()===last.toLowerCase());
-    if(dup){
-      done();
-      $('confirmName').textContent="You're already signed in, "+first+".";
-      $('queueNum').innerHTML='<small>Your number</small>#'+dup.num;
-      $('confirmNote').textContent='';
-      $('formWrap').classList.add('hidden');
-      $('confirmWrap').classList.remove('hidden');
-      window.scrollTo(0,0);
-      return;
-    }
-  }catch(e){}
+  if(!BYPASS_DUP){
+    try{
+      const existing=await lightEntries();
+      const dup=existing.find(x=>isToday(x.ts)&&x.first.toLowerCase()===first.toLowerCase()&&x.last.toLowerCase()===last.toLowerCase());
+      if(dup){
+        done();
+        $('confirmName').textContent="You're already signed in, "+first+".";
+        $('queueNum').innerHTML='<small>Your number</small>#'+dup.num;
+        $('confirmNote').textContent='';
+        $('notMeBtn').classList.remove('hidden');
+        $('formWrap').classList.add('hidden');
+        $('confirmWrap').classList.remove('hidden');
+        window.scrollTo(0,0);
+        return;
+      }
+    }catch(e){}
+  }
+  BYPASS_DUP=false;
 
   if(!photos.selfie){ return done('A selfie is required to sign in.'); }
   const rawMobile=$('mobile').value.replace(/[^0-9]/g,'');
@@ -513,9 +527,14 @@ async function submitEntry(){
   Object.keys(fields).forEach(k=>{ if(fields[k]===undefined) delete fields[k]; });
 
   try{
-    /* 1. create the record */
-    const createRes=await fetch(API,{method:'POST',headers:HDRS,
+    /* 1. create the record (one retry on rate-limit) */
+    let createRes=await fetch(API,{method:'POST',headers:HDRS,
       body:JSON.stringify({records:[{fields:fields}],typecast:true})});
+    if(createRes.status===429){
+      await new Promise(r=>setTimeout(r,1300));
+      createRes=await fetch(API,{method:'POST',headers:HDRS,
+        body:JSON.stringify({records:[{fields:fields}],typecast:true})});
+    }
     if(!createRes.ok){ throw new Error('create '+createRes.status); }
     const created=await createRes.json();
     const recId=created.records[0].id;
@@ -535,12 +554,12 @@ async function submitEntry(){
     }
 
     $('confirmName').textContent="You're signed in, "+first+".";
+    $('notMeBtn').classList.add('hidden');
     $('confirmNote').textContent=selfieFailed?'Your photo did not upload — please mention this at the desk.':'';
-    /* queue number = continuous position among all sign-ins */
+    /* permanent queue number stamped onto the record */
     try{
-      const all=await lightEntries();
-      const me=all.find(e=>e.id===recId);
-      $('queueNum').innerHTML='<small>Your number</small>#'+(me?me.num:all.length);
+      const num=await stampQueueNumber(recId);
+      $('queueNum').innerHTML='<small>Your number</small>#'+num;
     }catch(e){ $('queueNum').innerHTML=''; }
     $('formWrap').classList.add('hidden');
     $('confirmWrap').classList.remove('hidden');
@@ -557,19 +576,34 @@ async function submitEntry(){
 async function lightEntries(){
   const out=[]; let offset='';
   do{
-    const url=API+'?pageSize=100&fields%5B%5D=First%20Name&fields%5B%5D=Last%20Name'+(offset?('&offset='+encodeURIComponent(offset)):'');
+    const url=API+'?pageSize=100&fields%5B%5D=First%20Name&fields%5B%5D=Last%20Name&fields%5B%5D=Queue%20Number'+(offset?('&offset='+encodeURIComponent(offset)):'');
     const res=await fetch(url,{headers:HDRS});
     if(!res.ok) throw new Error('list '+res.status);
     const data=await res.json();
     (data.records||[]).forEach(r=>{
       out.push({id:r.id,ts:new Date(r.createdTime).getTime(),
-        first:(r.fields||{})['First Name']||'',last:(r.fields||{})['Last Name']||''});
+        first:(r.fields||{})['First Name']||'',last:(r.fields||{})['Last Name']||'',
+        qn:(r.fields||{})['Queue Number']||null});
     });
     offset=data.offset||'';
   }while(offset);
   out.sort((a,b)=>a.ts-b.ts);
-  out.forEach((e,i)=>e.num=i+1);
+  out.forEach((e,i)=>{ e.num=e.qn||(i+1); });
   return out;
+}
+
+/* stamp a permanent queue number onto a new record; returns the number */
+async function stampQueueNumber(recId){
+  const all=await lightEntries();
+  const maxStamped=all.reduce((m,e)=>Math.max(m,e.qn||0),0);
+  const me=all.find(e=>e.id===recId);
+  const positional=me?all.indexOf(me)+1:all.length;
+  const num=Math.max(maxStamped+1,positional);
+  try{
+    await fetch(API+'/'+recId,{method:'PATCH',headers:HDRS,
+      body:JSON.stringify({fields:{'Queue Number':num},typecast:true})});
+  }catch(e){}
+  return num;
 }
 
 /* upload a dataURL image to an Airtable attachment field */
@@ -626,6 +660,7 @@ async function loadEntries(){
         instagram:f['Instagram']||'',
         portfolio:f['Portfolio Link']||'',
         seenBy:f['Seen By']||[],
+        qn:f['Queue Number']||null,
         decisions:{Katie:f['Katie Decision']||'',Ana:f['Ana Decision']||''},
         motherAgent:f['Mother Agent']||'', motherAgentCountry:f['Mother Agent Country']||'',
         agMilan:f['Milan Agency']||'', agNY:f['NY Agency']||'', agLA:f['LA Agency']||'',
@@ -637,7 +672,8 @@ async function loadEntries(){
     offset=data.offset||'';
   }while(offset);
   out.sort((a,b)=>a.ts-b.ts);
-  out.forEach((e,i)=>e.num=i+1);
+  out.forEach((e,i)=>{ e.num=e.qn||(i+1); });
+  out.sort((a,b)=>a.num-b.num);
   return out;
 }
 
@@ -665,8 +701,13 @@ function setDecFilter(btn){
   btn.classList.add('active');
   if(CACHE.length) renderList(true); else refreshAdmin();
 }
+function effectiveSeen(e){
+  const s=new Set(e.seenBy||[]);
+  if(e.decisions){ AGENTS.forEach(a=>{ if(e.decisions[a]) s.add(a); }); }
+  return [...s];
+}
 function passesFilters(e){
-  if(UNSEEN_ONLY && e.seenBy && e.seenBy.length) return false;
+  if(UNSEEN_ONLY && effectiveSeen(e).length) return false;
   if(DEC_FILTER && !(e.decisions&&(e.decisions.Katie===DEC_FILTER||e.decisions.Ana===DEC_FILTER))) return false;
   if(SEARCH_Q){
     const name=(e.first+' '+e.last).toLowerCase();
@@ -689,7 +730,7 @@ function renderList(quiet){
   const list=$('adminList');
   const entries=CACHE;
   const sy=window.scrollY;
-  const unseen=entries.filter(e=>!(e.seenBy&&e.seenBy.length)).length;
+  const unseen=entries.filter(e=>!effectiveSeen(e).length).length;
   const sign=entries.filter(e=>e.decisions&&(e.decisions.Katie==='Sign'||e.decisions.Ana==='Sign')).length;
   const unsure=entries.filter(e=>e.decisions&&(e.decisions.Katie==='Unsure'||e.decisions.Ana==='Unsure')).length;
   $('adminCount').textContent=entries.length+' signed in · '+unseen+' unseen · '+sign+' sign · '+unsure+' unsure';
