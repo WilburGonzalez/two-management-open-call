@@ -447,12 +447,11 @@ async function submitEntry(){
     }
 
     $('confirmName').textContent="You're signed in, "+first+".";
-    /* queue number = position among today's sign-ins */
+    /* queue number = continuous position among all sign-ins */
     try{
       const all=await loadEntries();
-      const todays=all.filter(e=>isToday(e.ts));
-      const pos=todays.findIndex(e=>e.id===recId)+1;
-      const num=pos>0?pos:todays.length;
+      const pos=all.findIndex(e=>e.id===recId)+1;
+      const num=pos>0?pos:all.length;
       $('queueNum').innerHTML='<small>Your number</small>#'+num;
     }catch(e){ $('queueNum').innerHTML=''; }
     $('formWrap').classList.add('hidden');
@@ -548,12 +547,7 @@ async function refreshAdmin(){
   $('adminCount').textContent=entries.length+(entries.length===1?' signed in':' signed in');
   if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
   list.innerHTML='';
-  const dayCounters={};
-  entries.forEach(e=>{
-    const d=new Date(e.ts).toDateString();
-    dayCounters[d]=(dayCounters[d]||0)+1;
-    list.appendChild(adminCard(e,dayCounters[d]));
-  });
+  entries.forEach((e,idx)=>list.appendChild(adminCard(e,idx+1)));
 }
 
 function agencyLine(e){
@@ -583,7 +577,7 @@ function adminCard(e,n){
   if(e.shoe)stats.push('Shoe '+e.shoe);
   if(e.hair)stats.push(e.hair);
   if(e.eyes)stats.push(e.eyes+' eyes');
-  info.innerHTML='<div class="cname">'+n+'. '+esc(e.first)+' '+esc(e.last)+'</div>'+
+  info.innerHTML='<div class="cname"><b>#'+n+'</b> &nbsp;'+esc(e.first)+' '+esc(e.last)+'</div>'+
     '<div class="cmeta">'+esc(stats.join(' · '))+
     (e.instagram?'<br><b>IG</b> '+esc(e.instagram):'')+
     (e.mobile?'<br><b>Mob</b> '+esc(e.mobile):'')+
@@ -611,11 +605,7 @@ async function exportPDF(){
   if(!w){ alert('Allow pop-ups to export the PDF.'); return; }
 
   let cards='';
-  const pdfDayCounters={};
   entries.forEach((e,i)=>{
-    const dKey=new Date(e.ts).toDateString();
-    pdfDayCounters[dKey]=(pdfDayCounters[dKey]||0)+1;
-    const dayNum=pdfDayCounters[dKey];
     const dayLabel=new Date(e.ts).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
     const stats=[];
     if(e.gender)stats.push(e.gender);
@@ -632,7 +622,7 @@ async function exportPDF(){
       <div class="pcard">
         <div class="pphoto">${e.selfie?`<img src="${e.selfie}">`:''}</div>
         <div class="pinfo">
-          <div class="pname">#${dayNum} · ${dayLabel} — ${esc(e.first)} ${esc(e.last)}</div>
+          <div class="pname">#${i+1} — ${esc(e.first)} ${esc(e.last)} <span style="font-size:10px;color:#777">(${dayLabel})</span></div>
           <div class="pstats">${esc(stats.join('  ·  '))}</div>
           ${e.instagram?`<div class="prow"><span>IG</span> ${esc(e.instagram)}</div>`:''}
           ${(e.mobile||e.email)?`<div class="prow"><span>Contact</span> ${esc([e.mobile,e.email].filter(Boolean).join('  ·  '))}</div>`:''}
