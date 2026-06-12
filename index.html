@@ -344,7 +344,7 @@
     <button class="chip" data-dec="Sign" onclick="setDecFilter(this)">Sign</button>
     <button class="chip" data-dec="Unsure" onclick="setDecFilter(this)">Unsure</button>
     <button class="chip" data-dec="Pass" onclick="setDecFilter(this)">Pass</button>
-    <input type="text" id="staffSearch" placeholder="Search name / # / IG" oninput="SEARCH_Q=this.value.trim().toLowerCase();refreshAdmin(true)">
+    <input type="text" id="staffSearch" placeholder="Search name / # / IG" oninput="SEARCH_Q=this.value.trim().toLowerCase();renderList()">
   </div>
   <div class="admin-list" id="adminList">
     <div class="loading">Loading…</div>
@@ -416,11 +416,17 @@ function thumbEl(src,tag,onDel){
 }
 
 document.getElementById('selfieInput').addEventListener('change',async e=>{
-  if(e.target.files[0]){ photos.selfie=await compressImage(e.target.files[0],SELFIE_DIM,SELFIE_Q); renderPreviews(); }
+  if(e.target.files[0]){
+    try{ photos.selfie=await compressImage(e.target.files[0],SELFIE_DIM,SELFIE_Q); renderPreviews(); }
+    catch(err){ alert('That photo could not be read. Please use the Selfie button to take a new photo with your camera.'); }
+  }
   e.target.value='';
 });
 document.getElementById('uploadInput').addEventListener('change',async e=>{
-  for(const f of e.target.files){ photos.uploads.push(await compressImage(f,UPLOAD_DIM,UPLOAD_Q)); }
+  for(const f of e.target.files){
+    try{ photos.uploads.push(await compressImage(f,UPLOAD_DIM,UPLOAD_Q)); }
+    catch(err){ alert('One photo could not be read and was skipped. JPG or PNG works best.'); }
+  }
   renderPreviews(); e.target.value='';
 });
 
@@ -428,34 +434,27 @@ document.getElementById('uploadInput').addEventListener('change',async e=>{
 const $=id=>document.getElementById(id);
 document.getElementById('submitBtn').addEventListener('click',submitEntry);
 
+let SUBMITTING=false;
 async function submitEntry(){
+  if(SUBMITTING) return;            // double-tap guard
+  SUBMITTING=true;
+  const btn=$('submitBtn');
   const err=$('formErr');
   err.classList.remove('show');
+  const done=(msg)=>{ SUBMITTING=false; btn.disabled=false; btn.textContent='Sign In'; if(msg) showErr(msg); };
+
   const first=$('firstName').value.trim();
   const last=$('lastName').value.trim();
-  if(!first||!last){ return showErr('First and last name are required.'); }
-  if(!photos.selfie){ return showErr('A selfie is required to sign in.'); }
-  const rawMobile=$('mobile').value.replace(/[^0-9]/g,'');
-  if(rawMobile){
-    const r=CODE_RANGE[$('mobileCode').value];
-    if(r && (rawMobile.length<r.mn || rawMobile.length>r.mx)){
-      const need=r.mn===r.mx?(r.mn+' digits'):(r.mn+'–'+r.mx+' digits');
-      return showErr('Mobile number looks wrong for '+r.iso+' — expected '+need+'.');
-    }
-  }
-  const emailVal=$('email').value.trim();
-  if(emailVal && !validEmail(emailVal)){ return showErr('Enter a valid email address (must include @ and a domain).'); }
-  if(!rawMobile && !emailVal){ return showErr('Please provide at least one contact: mobile or email.'); }
+  if(!first||!last){ return done('First and last name are required.'); }
 
-  const btn=$('submitBtn');
   btn.disabled=true; btn.textContent='Checking…';
 
-  /* duplicate protection: same first+last already signed in today -> show their number */
+  /* duplicate check FIRST: returning models retrieve their number with just their name */
   try{
     const existing=await lightEntries();
     const dup=existing.find(x=>isToday(x.ts)&&x.first.toLowerCase()===first.toLowerCase()&&x.last.toLowerCase()===last.toLowerCase());
     if(dup){
-      btn.disabled=false; btn.textContent='Sign In';
+      done();
       $('confirmName').textContent="You're already signed in, "+first+".";
       $('queueNum').innerHTML='<small>Your number</small>#'+dup.num;
       $('confirmNote').textContent='';
@@ -465,6 +464,20 @@ async function submitEntry(){
       return;
     }
   }catch(e){}
+
+  if(!photos.selfie){ return done('A selfie is required to sign in.'); }
+  const rawMobile=$('mobile').value.replace(/[^0-9]/g,'');
+  if(rawMobile){
+    const r=CODE_RANGE[$('mobileCode').value];
+    if(r && (rawMobile.length<r.mn || rawMobile.length>r.mx)){
+      const need=r.mn===r.mx?(r.mn+' digits'):(r.mn+'–'+r.mx+' digits');
+      return done('Mobile number looks wrong for '+r.iso+' — expected '+need+'.');
+    }
+  }
+  const emailVal=$('email').value.trim();
+  if(emailVal && !validEmail(emailVal)){ return done('Enter a valid email address (must include @ and a domain).'); }
+  if(!rawMobile && !emailVal){ return done('Please provide at least one contact: mobile or email.'); }
+
   btn.textContent='Saving…';
 
   /* height label "178 cm (5'10\")" -> extract number for the cm field */
@@ -536,7 +549,7 @@ async function submitEntry(){
   }catch(ex){
     showErr('Could not save. Check the connection and try again.');
   }finally{
-    btn.disabled=false; btn.textContent='Sign In';
+    SUBMITTING=false; btn.disabled=false; btn.textContent='Sign In';
   }
 }
 
@@ -640,17 +653,17 @@ function exitAdmin(){
   document.getElementById('signinView').classList.remove('hidden');
 }
 
-let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='';
+let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[];
 function toggleUnseen(){
   UNSEEN_ONLY=!UNSEEN_ONLY;
   $('unseenBtn').textContent=UNSEEN_ONLY?'Show all':'Unseen only';
-  refreshAdmin();
+  if(CACHE.length) renderList(true); else refreshAdmin();
 }
 function setDecFilter(btn){
   DEC_FILTER=btn.getAttribute('data-dec');
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
   btn.classList.add('active');
-  refreshAdmin();
+  if(CACHE.length) renderList(true); else refreshAdmin();
 }
 function passesFilters(e){
   if(UNSEEN_ONLY && e.seenBy && e.seenBy.length) return false;
@@ -667,19 +680,24 @@ async function refreshAdmin(quiet){
   if(REFRESHING) return; REFRESHING=true;
   const list=$('adminList');
   if(!quiet) list.innerHTML='<div class="loading">Loading…</div>';
-  let entries;
-  try{ entries=await loadEntries(); }catch(e){ REFRESHING=false; return; }
+  try{ CACHE=await loadEntries(); }catch(e){ REFRESHING=false; return; }
+  renderList(quiet);
+  REFRESHING=false;
+}
+/* renders from CACHE — search/filters cost zero network */
+function renderList(quiet){
+  const list=$('adminList');
+  const entries=CACHE;
   const sy=window.scrollY;
   const unseen=entries.filter(e=>!(e.seenBy&&e.seenBy.length)).length;
   const sign=entries.filter(e=>e.decisions&&(e.decisions.Katie==='Sign'||e.decisions.Ana==='Sign')).length;
   const unsure=entries.filter(e=>e.decisions&&(e.decisions.Katie==='Unsure'||e.decisions.Ana==='Unsure')).length;
   $('adminCount').textContent=entries.length+' signed in · '+unseen+' unseen · '+sign+' sign · '+unsure+' unsure';
-  if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; REFRESHING=false; return; }
+  if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
   list.innerHTML='';
   entries.forEach(e=>{ if(passesFilters(e)) list.appendChild(adminCard(e,e.num)); });
   if(!list.children.length){ list.innerHTML='<div class="empty">No one matches this filter.</div>'; }
   if(quiet) window.scrollTo(0,sy);
-  REFRESHING=false;
 }
 /* auto-refresh every 5s while staff view open, screen on, viewer closed */
 setInterval(()=>{
