@@ -121,6 +121,11 @@
   .card .cmeta b{color:#000;font-weight:600;}
   .card .cdel{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--err);
     border:1px solid var(--err);background:#fff;padding:6px 9px;cursor:pointer;align-self:flex-start;}
+  .seen-row{display:flex;gap:8px;margin:10px 0;}
+  .seen-btn{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+    border:1px solid #000;background:#fff;color:#000;padding:8px 14px;cursor:pointer;}
+  .seen-btn.active{background:#000;color:#fff;}
+  .seen-btn:disabled{opacity:.5;}
   .empty{text-align:center;color:var(--muted);padding:80px 24px;font-size:14px;line-height:1.5;}
   .loading{text-align:center;color:var(--muted);padding:60px;font-size:13px;}
 
@@ -298,6 +303,7 @@
       <div class="count" id="adminCount">0 signed in</div>
     </div>
     <div class="admin-actions">
+      <button onclick="toggleUnseen()" class="ghost" id="unseenBtn">Unseen only</button>
       <button onclick="refreshAdmin()" class="ghost">Refresh</button>
       <button onclick="exportPDF()">Export PDF</button>
       <button onclick="exitAdmin()" class="ghost">Exit</button>
@@ -323,6 +329,7 @@ const UPLOAD   = "https://content.airtable.com/v0/"+BASE_ID;
 const HDRS     = { "Authorization":"Bearer "+AIRTABLE_TOKEN, "Content-Type":"application/json" };
 const F_SELFIE = "flduTuKYg9IrRqzX7";   // Selfie attachment field
 const F_PHOTOS = "fld4oYp8NReFAXDKn";   // Additional Photos attachment field
+const AGENTS   = ["Ana","Katie"];        // staff who mark models as seen
 
 const MAX_DIM = 900;       // max width/height of stored photo (Airtable can take bigger)
 const JPEG_Q  = 0.8;       // compression quality
@@ -527,6 +534,7 @@ async function loadEntries(){
         hair:f['Hair']||'', eyes:f['Eyes']||'',
         instagram:f['Instagram']||'',
         portfolio:f['Portfolio Link']||'',
+        seenBy:f['Seen By']||[],
         motherAgent:f['Mother Agent']||'', motherAgentCountry:f['Mother Agent Country']||'',
         agMilan:f['Milan Agency']||'', agNY:f['NY Agency']||'', agLA:f['LA Agency']||'',
         agGER:f['German Agency']||'', agESP:f['Spain Agency']||'', agSCAN:f['Scandinavia Agency']||'',
@@ -550,14 +558,25 @@ function exitAdmin(){
   document.getElementById('signinView').classList.remove('hidden');
 }
 
+let UNSEEN_ONLY=false;
+function toggleUnseen(){
+  UNSEEN_ONLY=!UNSEEN_ONLY;
+  $('unseenBtn').textContent=UNSEEN_ONLY?'Show all':'Unseen only';
+  refreshAdmin();
+}
 async function refreshAdmin(){
   const list=$('adminList');
   list.innerHTML='<div class="loading">Loading…</div>';
   const entries=await loadEntries();
-  $('adminCount').textContent=entries.length+(entries.length===1?' signed in':' signed in');
+  const unseen=entries.filter(e=>!(e.seenBy&&e.seenBy.length)).length;
+  $('adminCount').textContent=entries.length+' signed in · '+unseen+' unseen';
   if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
   list.innerHTML='';
-  entries.forEach((e,idx)=>list.appendChild(adminCard(e,idx+1)));
+  entries.forEach((e,idx)=>{
+    if(UNSEEN_ONLY && e.seenBy && e.seenBy.length) return;
+    list.appendChild(adminCard(e,idx+1));
+  });
+  if(UNSEEN_ONLY && !list.children.length){ list.innerHTML='<div class="empty">Everyone has been seen.</div>'; }
 }
 
 function agencyLine(e){
@@ -598,6 +617,27 @@ function adminCard(e,n){
     (agencyLine(e)?'<br>'+esc(agencyLine(e)):'')+
     (e.uploads&&e.uploads.length?'<br><b>'+e.uploads.length+'</b> extra photo'+(e.uploads.length>1?'s':''):'')+
     '</div>';
+  /* agent seen-by toggles */
+  const row=document.createElement('div');row.className='seen-row';
+  AGENTS.forEach(a=>{
+    const b=document.createElement('button');
+    const active=(e.seenBy||[]).includes(a);
+    b.className='seen-btn'+(active?' active':'');
+    b.textContent=active?('✓ '+a):a;
+    b.onclick=async()=>{
+      b.disabled=true;
+      const cur=e.seenBy||[];
+      const next=cur.includes(a)?cur.filter(x=>x!==a):cur.concat([a]);
+      try{
+        const res=await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,
+          body:JSON.stringify({fields:{'Seen By':next},typecast:true})});
+        if(res.ok){ e.seenBy=next; }
+      }catch(err){}
+      refreshAdmin();
+    };
+    row.appendChild(b);
+  });
+  info.appendChild(row);
   const del=document.createElement('button');del.className='cdel';del.textContent='Delete';
   del.onclick=async()=>{ if(confirm('Delete '+e.first+' '+e.last+'?')){ await fetch(API+'/'+e.id,{method:'DELETE',headers:HDRS}); refreshAdmin(); } };
   info.appendChild(del);
@@ -637,6 +677,7 @@ async function exportPDF(){
           <div class="pstats">${esc(stats.join('  ·  '))}</div>
           ${e.instagram?`<div class="prow"><span>IG</span> ${esc(e.instagram)}</div>`:''}
           ${e.portfolio?`<div class="prow"><span>Book</span> ${esc(e.portfolio.replace(/^https?:\/\//,''))}</div>`:''}
+          ${(e.seenBy&&e.seenBy.length)?`<div class="prow"><span>Seen by</span> ${esc(e.seenBy.join(', '))}</div>`:''}
           ${(e.mobile||e.email)?`<div class="prow"><span>Contact</span> ${esc([e.mobile,e.email].filter(Boolean).join('  ·  '))}</div>`:''}
           ${e.currentCity?`<div class="prow"><span>Current City</span> ${esc(e.currentCity)}</div>`:''}
           ${e.motherAgent?`<div class="prow"><span>Mother Agent</span> ${esc(e.motherAgent)}${e.motherAgentCountry?' ('+esc(e.motherAgentCountry)+')':''}</div>`:''}
