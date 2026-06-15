@@ -488,7 +488,7 @@ async function submitEntry(){
       if(dup){
         done();
         $('confirmName').textContent="You're already signed in, "+first+".";
-        $('queueNum').innerHTML='<small>Your number</small>#'+dup.num;
+        $('queueNum').innerHTML=dup.num?('<small>Your number</small>#'+dup.num):'<small>Submission received</small>';
         $('confirmNote').textContent='';
         $('notMeBtn').classList.remove('hidden');
         $('formWrap').classList.add('hidden');
@@ -578,11 +578,16 @@ async function submitEntry(){
     $('confirmName').textContent="You're signed in, "+first+".";
     $('notMeBtn').classList.add('hidden');
     $('confirmNote').textContent=selfieFailed?'Your photo did not upload — please mention this at the desk.':'';
-    /* permanent queue number stamped onto the record */
-    try{
-      const num=await stampQueueNumber(recId);
-      $('queueNum').innerHTML='<small>Your number</small>#'+num;
-    }catch(e){ $('queueNum').innerHTML=''; }
+    /* permanent queue number — only for in-person attendees; remote submissions get none */
+    const isRemote=($('attendance').value==='Remote submission');
+    if(isRemote){
+      $('queueNum').innerHTML='<small>Remote submission received</small>';
+    }else{
+      try{
+        const num=await stampQueueNumber(recId);
+        $('queueNum').innerHTML='<small>Your number</small>#'+num;
+      }catch(e){ $('queueNum').innerHTML=''; }
+    }
     $('formWrap').classList.add('hidden');
     $('confirmWrap').classList.remove('hidden');
     window.scrollTo(0,0);
@@ -598,19 +603,20 @@ async function submitEntry(){
 async function lightEntries(){
   const out=[]; let offset='';
   do{
-    const url=API+'?pageSize=100&fields%5B%5D=First%20Name&fields%5B%5D=Last%20Name&fields%5B%5D=Queue%20Number'+(offset?('&offset='+encodeURIComponent(offset)):'');
+    const url=API+'?pageSize=100&fields%5B%5D=First%20Name&fields%5B%5D=Last%20Name&fields%5B%5D=Queue%20Number&fields%5B%5D=Attendance'+(offset?('&offset='+encodeURIComponent(offset)):'');
     const res=await fetch(url,{headers:HDRS});
     if(!res.ok) throw new Error('list '+res.status);
     const data=await res.json();
     (data.records||[]).forEach(r=>{
       out.push({id:r.id,ts:new Date(r.createdTime).getTime(),
         first:(r.fields||{})['First Name']||'',last:(r.fields||{})['Last Name']||'',
-        qn:(r.fields||{})['Queue Number']||null});
+        qn:(r.fields||{})['Queue Number']||null,
+        attendance:(r.fields||{})['Attendance']||''});
     });
     offset=data.offset||'';
   }while(offset);
   out.sort((a,b)=>a.ts-b.ts);
-  out.forEach((e,i)=>{ e.num=e.qn||(i+1); });
+  out.forEach(e=>{ e.num=(e.attendance==='Remote submission')?null:(e.qn||null); });
   return out;
 }
 
@@ -618,9 +624,7 @@ async function lightEntries(){
 async function stampQueueNumber(recId){
   const all=await lightEntries();
   const maxStamped=all.reduce((m,e)=>Math.max(m,e.qn||0),0);
-  const me=all.find(e=>e.id===recId);
-  const positional=me?all.indexOf(me)+1:all.length;
-  const num=Math.max(maxStamped+1,positional);
+  const num=maxStamped+1;
   try{
     await fetch(API+'/'+recId,{method:'PATCH',headers:HDRS,
       body:JSON.stringify({fields:{'Queue Number':num},typecast:true})});
@@ -695,8 +699,13 @@ async function loadEntries(){
     offset=data.offset||'';
   }while(offset);
   out.sort((a,b)=>a.ts-b.ts);
-  out.forEach((e,i)=>{ e.num=e.qn||(i+1); });
-  out.sort((a,b)=>a.num-b.num);
+  out.forEach(e=>{ e.num=(e.attendance==='Remote submission')?null:(e.qn||null); });
+  out.sort((a,b)=>{
+    if(a.num&&b.num) return a.num-b.num;
+    if(a.num&&!b.num) return -1;
+    if(!a.num&&b.num) return 1;
+    return a.ts-b.ts;
+  });
   return out;
 }
 
@@ -805,7 +814,7 @@ function adminCard(e,n){
   if(e.shoe)stats.push('Shoe '+e.shoe);
   if(e.hair)stats.push(e.hair);
   if(e.eyes)stats.push(e.eyes+' eyes');
-  info.innerHTML='<div class="cname"><b>#'+n+'</b> &nbsp;'+esc(e.first)+' '+esc(e.last)+(e.attendance?' <span class="att-tag att-'+(e.attendance.indexOf('Friday')>=0?'fri':e.attendance.indexOf('Saturday')>=0?'sat':'rem')+'">'+esc(e.attendance.replace('Friday June 19','FRI').replace('Saturday June 20','SAT').replace('Remote submission','REMOTE'))+'</span>':'')+'</div>'+
+  info.innerHTML='<div class="cname">'+(n?'<b>#'+n+'</b> &nbsp;':'')+esc(e.first)+' '+esc(e.last)+(e.attendance?' <span class="att-tag att-'+(e.attendance.indexOf('Friday')>=0?'fri':e.attendance.indexOf('Saturday')>=0?'sat':'rem')+'">'+esc(e.attendance.replace('Friday June 19','FRI').replace('Saturday June 20','SAT').replace('Remote submission','REMOTE'))+'</span>':'')+'</div>'+
     '<div class="cmeta">'+esc(stats.join(' · '))+
     (e.instagram?'<br><b>IG</b> '+esc(e.instagram):'')+
     (e.portfolio?'<br><b>Book</b> <a href="'+esc(e.portfolio)+'" target="_blank" style="color:#000">'+esc(e.portfolio.replace(/^https?:\/\//,''))+'</a>':'')+
@@ -904,7 +913,7 @@ async function exportPDF(todayOnly){
       <div class="pcard">
         <div class="pphoto">${e.selfie?`<img src="${e.selfie}">`:''}</div>
         <div class="pinfo">
-          <div class="pname">#${e.num} — ${esc(e.first)} ${esc(e.last)}${e.attendance?` <span style="font-size:10px;font-weight:700">[${esc(e.attendance.replace('Friday June 19','FRI').replace('Saturday June 20','SAT').replace('Remote submission','REMOTE'))}]</span>`:''} <span style="font-size:10px;color:#777">(${dayLabel})</span>${decLine(e)?` <span style="font-weight:700">[${esc(decLine(e))}]</span>`:''}</div>
+          <div class="pname">${e.num?'#'+e.num+' — ':''}${esc(e.first)} ${esc(e.last)}${e.attendance?` <span style="font-size:10px;font-weight:700">[${esc(e.attendance.replace('Friday June 19','FRI').replace('Saturday June 20','SAT').replace('Remote submission','REMOTE'))}]</span>`:''} <span style="font-size:10px;color:#777">(${dayLabel})</span>${decLine(e)?` <span style="font-weight:700">[${esc(decLine(e))}]</span>`:''}</div>
           <div class="pstats">${esc(stats.join('  ·  '))}</div>
           ${e.instagram?`<div class="prow"><span>IG</span> ${esc(e.instagram)}</div>`:''}
           ${e.portfolio?`<div class="prow"><span>Book</span> ${esc(e.portfolio.replace(/^https?:\/\//,''))}</div>`:''}
