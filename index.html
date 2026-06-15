@@ -132,6 +132,10 @@
     border:1px solid #000;background:#fff;color:#000;padding:7px 14px;cursor:pointer;}
   .chip.active{background:#000;color:#fff;}
   #staffSearch{flex:1;min-width:150px;border:1px solid #000;padding:8px 10px;font-size:13px;background:#fff;color:#000;}
+  .att-tag{font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:3px;vertical-align:middle;}
+  .att-fri{background:#0a7d33;color:#fff;}
+  .att-sat{background:#1156b8;color:#fff;}
+  .att-rem{background:#888;color:#fff;}
   .dec-row{display:flex;gap:8px;margin:4px 0 10px;}
   .dec-cols{display:flex;gap:0;margin:8px 0 10px;border:1px solid #ddd;}
   .dec-col{flex:1;display:flex;flex-direction:column;gap:6px;padding:10px;}
@@ -176,6 +180,15 @@
   </div>
 
   <div class="wrap" id="formWrap">
+    <div class="eyebrow">Attendance</div>
+    <label>Will you attend the Milan casting in person?</label>
+    <select id="attendance">
+      <option value="">Select…</option>
+      <option value="Friday June 19">Yes — Friday June 19 (4–6 PM)</option>
+      <option value="Saturday June 20">Yes — Saturday June 20 (4–6 PM)</option>
+      <option value="Remote submission">No — remote submission only</option>
+    </select>
+
     <div class="eyebrow">Talent</div>
 
     <div class="row">
@@ -340,6 +353,13 @@
     </div>
   </div>
   <div class="filter-bar">
+    <span class="filter-label">Attending:</span>
+    <button class="chip active" data-att="" onclick="setAttFilter(this)">All</button>
+    <button class="chip" data-att="Friday June 19" onclick="setAttFilter(this)">Fri</button>
+    <button class="chip" data-att="Saturday June 20" onclick="setAttFilter(this)">Sat</button>
+    <button class="chip" data-att="Remote submission" onclick="setAttFilter(this)">Remote</button>
+  </div>
+  <div class="filter-bar">
     <span class="filter-label">Decision:</span>
     <button class="chip active" data-dec="" onclick="setDecFilter(this)">All</button>
     <button class="chip" data-dec="Sign" onclick="setDecFilter(this)">Sign</button>
@@ -456,6 +476,7 @@ async function submitEntry(){
   const first=$('firstName').value.trim();
   const last=$('lastName').value.trim();
   if(!first||!last){ return done('First and last name are required.'); }
+  if(!$('attendance').value){ return done('Please tell us if you will attend Friday, Saturday, or are submitting remotely.'); }
 
   btn.disabled=true; btn.textContent='Checking…';
 
@@ -501,6 +522,7 @@ async function submitEntry(){
   const fields={
     "First Name":first,
     "Last Name":last,
+    "Attendance":$('attendance').value||undefined,
     "Gender":$('gender').value||undefined,
     "Age":$('age').value?parseInt($('age').value,10):undefined,
     "Mobile":rawMobile?($('mobileCode').value+' '+rawMobile):undefined,
@@ -620,7 +642,7 @@ function showErr(m){const e=$('formErr');e.textContent=m;e.classList.add('show')
 
 function resetForm(){
   ['firstName','lastName','mobile','email','age','currentCity','birthCountry','passportCountry','height','waist','shoe','hair','eyes','instagram','portfolio',
-   'motherAgent','motherAgentCountry','agMilan','agNY','agLA','agGER','agESP','agSCAN'].forEach(i=>$(i).value='');
+   'motherAgent','motherAgentCountry','agMilan','agNY','agLA','agGER','agESP','agSCAN','attendance'].forEach(i=>$(i).value='');
   $('mobileCode').value='+39';
   $('gender').value='';
   $('birthCountry').value='';
@@ -650,6 +672,7 @@ async function loadEntries(){
         id:r.id,
         ts:new Date(r.createdTime).getTime(),
         first:f['First Name']||'', last:f['Last Name']||'',
+        attendance:f['Attendance']||'',
         gender:f['Gender']||'', age:f['Age']||'',
         mobile:f['Mobile']||'', email:f['Email']||'',
         currentCity:f['Current City']||'',
@@ -689,7 +712,13 @@ function exitAdmin(){
   document.getElementById('signinView').classList.remove('hidden');
 }
 
-let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[];
+let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='';
+function setAttFilter(btn){
+  ATT_FILTER=btn.getAttribute('data-att');
+  btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  if(CACHE.length) renderList(true); else refreshAdmin();
+}
 function toggleUnseen(){
   UNSEEN_ONLY=!UNSEEN_ONLY;
   $('unseenBtn').textContent=UNSEEN_ONLY?'Show all':'Unseen only';
@@ -697,7 +726,7 @@ function toggleUnseen(){
 }
 function setDecFilter(btn){
   DEC_FILTER=btn.getAttribute('data-dec');
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
   btn.classList.add('active');
   if(CACHE.length) renderList(true); else refreshAdmin();
 }
@@ -707,6 +736,7 @@ function effectiveSeen(e){
   return [...s];
 }
 function passesFilters(e){
+  if(ATT_FILTER && e.attendance!==ATT_FILTER) return false;
   if(UNSEEN_ONLY && effectiveSeen(e).length) return false;
   if(DEC_FILTER && !(e.decisions&&(e.decisions.Katie===DEC_FILTER||e.decisions.Ana===DEC_FILTER))) return false;
   if(SEARCH_Q){
@@ -775,7 +805,7 @@ function adminCard(e,n){
   if(e.shoe)stats.push('Shoe '+e.shoe);
   if(e.hair)stats.push(e.hair);
   if(e.eyes)stats.push(e.eyes+' eyes');
-  info.innerHTML='<div class="cname"><b>#'+n+'</b> &nbsp;'+esc(e.first)+' '+esc(e.last)+'</div>'+
+  info.innerHTML='<div class="cname"><b>#'+n+'</b> &nbsp;'+esc(e.first)+' '+esc(e.last)+(e.attendance?' <span class="att-tag att-'+(e.attendance.indexOf('Friday')>=0?'fri':e.attendance.indexOf('Saturday')>=0?'sat':'rem')+'">'+esc(e.attendance.replace('Friday June 19','FRI').replace('Saturday June 20','SAT').replace('Remote submission','REMOTE'))+'</span>':'')+'</div>'+
     '<div class="cmeta">'+esc(stats.join(' · '))+
     (e.instagram?'<br><b>IG</b> '+esc(e.instagram):'')+
     (e.portfolio?'<br><b>Book</b> <a href="'+esc(e.portfolio)+'" target="_blank" style="color:#000">'+esc(e.portfolio.replace(/^https?:\/\//,''))+'</a>':'')+
@@ -874,7 +904,7 @@ async function exportPDF(todayOnly){
       <div class="pcard">
         <div class="pphoto">${e.selfie?`<img src="${e.selfie}">`:''}</div>
         <div class="pinfo">
-          <div class="pname">#${e.num} — ${esc(e.first)} ${esc(e.last)} <span style="font-size:10px;color:#777">(${dayLabel})</span>${decLine(e)?` <span style="font-weight:700">[${esc(decLine(e))}]</span>`:''}</div>
+          <div class="pname">#${e.num} — ${esc(e.first)} ${esc(e.last)}${e.attendance?` <span style="font-size:10px;font-weight:700">[${esc(e.attendance.replace('Friday June 19','FRI').replace('Saturday June 20','SAT').replace('Remote submission','REMOTE'))}]</span>`:''} <span style="font-size:10px;color:#777">(${dayLabel})</span>${decLine(e)?` <span style="font-weight:700">[${esc(decLine(e))}]</span>`:''}</div>
           <div class="pstats">${esc(stats.join('  ·  '))}</div>
           ${e.instagram?`<div class="prow"><span>IG</span> ${esc(e.instagram)}</div>`:''}
           ${e.portfolio?`<div class="prow"><span>Book</span> ${esc(e.portfolio.replace(/^https?:\/\//,''))}</div>`:''}
