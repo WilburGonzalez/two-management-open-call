@@ -136,6 +136,11 @@
   .att-fri{background:#0a7d33;color:#fff;}
   .att-sat{background:#1156b8;color:#fff;}
   .att-rem{background:#888;color:#fff;}
+  .ex-row{margin:8px 0 2px;}
+  .ex-btn{font-size:11px;letter-spacing:.04em;font-weight:600;border:1px solid #bbb;
+    background:#fff;color:#777;padding:7px 12px;cursor:pointer;}
+  .ex-btn.on{background:#b00020;border-color:#b00020;color:#fff;}
+  .card.excluded{opacity:.5;}
   .dec-row{display:flex;gap:8px;margin:4px 0 10px;}
   .dec-cols{display:flex;gap:0;margin:8px 0 10px;border:1px solid #ddd;}
   .dec-col{flex:1;display:flex;flex-direction:column;gap:6px;padding:10px;}
@@ -677,6 +682,7 @@ async function loadEntries(){
         ts:new Date(r.createdTime).getTime(),
         first:f['First Name']||'', last:f['Last Name']||'',
         attendance:f['Attendance']||'',
+        excluded:!!f['Exclude from Count'],
         gender:f['Gender']||'', age:f['Age']||'',
         mobile:f['Mobile']||'', email:f['Email']||'',
         currentCity:f['Current City']||'',
@@ -769,10 +775,12 @@ function renderList(quiet){
   const list=$('adminList');
   const entries=CACHE;
   const sy=window.scrollY;
-  const unseen=entries.filter(e=>!effectiveSeen(e).length).length;
-  const sign=entries.filter(e=>e.decisions&&(e.decisions.Katie==='Sign'||e.decisions.Ana==='Sign')).length;
-  const unsure=entries.filter(e=>e.decisions&&(e.decisions.Katie==='Unsure'||e.decisions.Ana==='Unsure')).length;
-  $('adminCount').textContent=entries.length+' signed in · '+unseen+' unseen · '+sign+' sign · '+unsure+' unsure';
+  const inPerson=entries.filter(e=>e.attendance&&e.attendance!=='Remote submission'&&!e.excluded);
+  const remote=entries.filter(e=>e.attendance==='Remote submission'&&!e.excluded).length;
+  const excl=entries.filter(e=>e.excluded).length;
+  const unseen=inPerson.filter(e=>!effectiveSeen(e).length).length;
+  const sign=entries.filter(e=>!e.excluded&&e.decisions&&(e.decisions.Katie==='Sign'||e.decisions.Ana==='Sign')).length;
+  $('adminCount').textContent=inPerson.length+' in-person · '+remote+' remote · '+unseen+' unseen · '+sign+' sign'+(excl?' · '+excl+' excluded':'');
   if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
   list.innerHTML='';
   entries.forEach(e=>{ if(passesFilters(e)) list.appendChild(adminCard(e,e.num)); });
@@ -797,7 +805,7 @@ function agencyLine(e){
 }
 
 function adminCard(e,n){
-  const card=document.createElement('div');card.className='card';
+  const card=document.createElement('div');card.className='card'+(e.excluded?' excluded':'');
   const ph=document.createElement('div');ph.className='cphoto';
   if(e.selfie){const im=document.createElement('img');im.src=e.selfie;ph.appendChild(im);}
   ph.style.cursor='pointer';
@@ -853,6 +861,23 @@ function adminCard(e,n){
     cols.appendChild(col);
   });
   info.appendChild(cols);
+  /* exclude-from-count toggle */
+  const exRow=document.createElement('div');exRow.className='ex-row';
+  const ex=document.createElement('button');
+  ex.className='ex-btn'+(e.excluded?' on':'');
+  ex.textContent=e.excluded?'✓ Excluded from count':'Exclude from count (test)';
+  ex.onclick=async()=>{
+    ex.disabled=true;
+    const next=!e.excluded;
+    try{
+      const res=await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,
+        body:JSON.stringify({fields:{'Exclude from Count':next},typecast:true})});
+      if(res.ok){ e.excluded=next; }
+    }catch(err){}
+    refreshAdmin(true);
+  };
+  exRow.appendChild(ex);
+  info.appendChild(exRow);
   const del=document.createElement('button');del.className='cdel';del.textContent='Delete';
   del.onclick=async()=>{ if(confirm('Delete '+e.first+' '+e.last+'?')){ await fetch(API+'/'+e.id,{method:'DELETE',headers:HDRS}); refreshAdmin(); } };
   info.appendChild(del);
@@ -889,7 +914,7 @@ function decLine(e){
 }
 async function exportPDF(todayOnly){
   let entries=await loadEntries();
-  entries=entries.filter(e=>passesFilters(e));
+  entries=entries.filter(e=>passesFilters(e) && !e.excluded);
   if(todayOnly) entries=entries.filter(e=>isToday(e.ts));
   if(!entries.length){ alert('Nothing to export for this selection.'); return; }
   const w=window.open('','_blank');
