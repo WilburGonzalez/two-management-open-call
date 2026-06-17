@@ -369,6 +369,12 @@
     <button class="chip" data-att="Remote submission" onclick="setAttFilter(this)">Remote</button>
   </div>
   <div class="filter-bar">
+    <span class="filter-label">Show:</span>
+    <button class="chip active" data-gen="" onclick="setGenFilter(this)">All</button>
+    <button class="chip" data-gen="Male" onclick="setGenFilter(this)">Men</button>
+    <button class="chip" data-gen="Female" onclick="setGenFilter(this)">Women</button>
+  </div>
+  <div class="filter-bar">
     <span class="filter-label">Decision:</span>
     <button class="chip active" data-dec="" onclick="setDecFilter(this)">All</button>
     <button class="chip" data-dec="Sign" onclick="setDecFilter(this)">Sign</button>
@@ -521,6 +527,8 @@ async function submitEntry(){
   BYPASS_DUP=false;
 
   if(!photos.selfie){ return done('A selfie is required to sign in.'); }
+  if(!$('gender').value){ return done('Please select gender.'); }
+  if(!$('height').value){ return done('Please select your height.'); }
   const rawMobile=$('mobile').value.replace(/[^0-9]/g,'');
   if(rawMobile){
     const r=CODE_RANGE[$('mobileCode').value];
@@ -743,9 +751,15 @@ function exitAdmin(){
   document.getElementById('signinView').classList.remove('hidden');
 }
 
-let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num';
+let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num', GEN_FILTER='';
 function setAttFilter(btn){
   ATT_FILTER=btn.getAttribute('data-att');
+  btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  if(CACHE.length) renderList(true); else refreshAdmin();
+}
+function setGenFilter(btn){
+  GEN_FILTER=btn.getAttribute('data-gen');
   btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
   btn.classList.add('active');
   if(CACHE.length) renderList(true); else refreshAdmin();
@@ -767,6 +781,7 @@ function effectiveSeen(e){
   return [...s];
 }
 function passesFilters(e){
+  if(GEN_FILTER && e.gender!==GEN_FILTER) return false;
   if(ATT_FILTER && e.attendance!==ATT_FILTER) return false;
   if(UNSEEN_ONLY && effectiveSeen(e).length) return false;
   if(DEC_FILTER && !(e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]===DEC_FILTER))) return false;
