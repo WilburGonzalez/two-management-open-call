@@ -147,7 +147,10 @@
   .dec-col+.dec-col{border-left:1px solid #ddd;}
   .dec-head{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
     text-align:center;padding-bottom:4px;border-bottom:1px solid #eee;}
-  .dec-col .dec-btn{width:100%;}
+  .dec-col .dec-btn{width:100%;padding:8px 4px;font-size:11px;}
+  .dec-group-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#999;
+    font-weight:700;margin:10px 0 2px;}
+  .dec-head{font-size:10px;}
   .dec-btn{font-size:12px;letter-spacing:.04em;font-weight:600;
     border:1px solid #999;background:#fff;color:#555;padding:8px 14px;cursor:pointer;}
   .dec-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
@@ -392,7 +395,11 @@ const UPLOAD   = "https://content.airtable.com/v0/"+BASE_ID;
 const HDRS     = { "Authorization":"Bearer "+AIRTABLE_TOKEN, "Content-Type":"application/json" };
 const F_SELFIE = "flduTuKYg9IrRqzX7";   // Selfie attachment field
 const F_PHOTOS = "fld4oYp8NReFAXDKn";   // Additional Photos attachment field
-const AGENTS   = ["Katie","Ana"];  // staff who mark models as seen
+const AGENTS   = ["Katie","Ana","Wilbur"];                 // in-person; their decision also marks "seen"
+const REMOTE_DECIDERS = ["NY","Germany","Scandi"];          // remote markets, decide later
+const ALL_DECIDERS = AGENTS.concat(REMOTE_DECIDERS);
+const DECIDER_FIELD = {Katie:'Katie Decision',Ana:'Ana Decision',Wilbur:'Wilbur Decision',
+  NY:'NY Decision',Germany:'Germany Decision',Scandi:'Scandi Decision'};
 
 const SELFIE_DIM=900, SELFIE_Q=0.8;     // selfie: screening quality
 const UPLOAD_DIM=2200, UPLOAD_Q=0.9;     // digitals: near-original, stays under Airtable's 5MB
@@ -694,7 +701,8 @@ async function loadEntries(){
         portfolio:f['Portfolio Link']||'',
         seenBy:f['Seen By']||[],
         qn:f['Queue Number']||null,
-        decisions:{Katie:f['Katie Decision']||'',Ana:f['Ana Decision']||''},
+        decisions:{Katie:f['Katie Decision']||'',Ana:f['Ana Decision']||'',Wilbur:f['Wilbur Decision']||'',
+          NY:f['NY Decision']||'',Germany:f['Germany Decision']||'',Scandi:f['Scandi Decision']||''},
         motherAgent:f['Mother Agent']||'', motherAgentCountry:f['Mother Agent Country']||'',
         agMilan:f['Milan Agency']||'', agNY:f['NY Agency']||'', agLA:f['LA Agency']||'',
         agGER:f['German Agency']||'', agESP:f['Spain Agency']||'', agSCAN:f['Scandinavia Agency']||'',
@@ -753,7 +761,7 @@ function effectiveSeen(e){
 function passesFilters(e){
   if(ATT_FILTER && e.attendance!==ATT_FILTER) return false;
   if(UNSEEN_ONLY && effectiveSeen(e).length) return false;
-  if(DEC_FILTER && !(e.decisions&&(e.decisions.Katie===DEC_FILTER||e.decisions.Ana===DEC_FILTER))) return false;
+  if(DEC_FILTER && !(e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]===DEC_FILTER))) return false;
   if(SEARCH_Q){
     const name=(e.first+' '+e.last).toLowerCase();
     const ig=(e.instagram||'').toLowerCase();
@@ -779,7 +787,7 @@ function renderList(quiet){
   const remote=entries.filter(e=>e.attendance==='Remote submission'&&!e.excluded).length;
   const excl=entries.filter(e=>e.excluded).length;
   const unseen=inPerson.filter(e=>!effectiveSeen(e).length).length;
-  const sign=entries.filter(e=>!e.excluded&&e.decisions&&(e.decisions.Katie==='Sign'||e.decisions.Ana==='Sign')).length;
+  const sign=entries.filter(e=>!e.excluded&&e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]==='Sign')).length;
   $('adminCount').textContent=inPerson.length+' in-person · '+remote+' remote · '+unseen+' unseen · '+sign+' sign'+(excl?' · '+excl+' excluded':'');
   if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
   list.innerHTML='';
@@ -833,34 +841,47 @@ function adminCard(e,n){
     (agencyLine(e)?'<br>'+esc(agencyLine(e)):'')+
     (e.uploads&&e.uploads.length?'<br><b>'+e.uploads.length+'</b> extra photo'+(e.uploads.length>1?'s':''):'')+
     '</div>';
-  /* two agent columns side by side */
-  const cols=document.createElement('div');cols.className='dec-cols';
-  AGENTS.forEach(agent=>{
+  /* decision groups: At Casting (marks seen) + Remote Markets */
+  function buildDeciderCol(name, marksSeen){
     const col=document.createElement('div');col.className='dec-col';
-    const h=document.createElement('div');h.className='dec-head';h.textContent=agent;
+    const h=document.createElement('div');h.className='dec-head';h.textContent=name;
     col.appendChild(h);
     [['Sign','sign'],['Unsure','unsure'],['Pass','pass']].forEach(([val,cls])=>{
       const b=document.createElement('button');
-      const cur=(e.decisions&&e.decisions[agent])||'';
+      const cur=(e.decisions&&e.decisions[name])||'';
       b.className='dec-btn '+cls+(cur===val?' on':'');
       b.textContent=val;
       b.onclick=async()=>{
         b.disabled=true;
-        const now=(e.decisions&&e.decisions[agent])||'';
+        const now=(e.decisions&&e.decisions[name])||'';
         const next=now===val?null:val;
-        const seenNow=(e.seenBy||[]).includes(agent)?(e.seenBy||[]):(e.seenBy||[]).concat([agent]);
+        const fields={[DECIDER_FIELD[name]]:next};
+        let seenNow=e.seenBy||[];
+        if(marksSeen){
+          seenNow=(e.seenBy||[]).includes(name)?(e.seenBy||[]):(e.seenBy||[]).concat([name]);
+          fields['Seen By']=next?seenNow:(e.seenBy||[]);
+        }
         try{
           const res=await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,
-            body:JSON.stringify({fields:{[agent+' Decision']:next,'Seen By':next?seenNow:(e.seenBy||[])},typecast:true})});
-          if(res.ok){ e.decisions[agent]=next||''; if(next) e.seenBy=seenNow; }
+            body:JSON.stringify({fields:fields,typecast:true})});
+          if(res.ok){ e.decisions[name]=next||''; if(marksSeen&&next) e.seenBy=seenNow; }
         }catch(err){}
         refreshAdmin(true);
       };
       col.appendChild(b);
     });
-    cols.appendChild(col);
-  });
+    return col;
+  }
+  const gA=document.createElement('div');gA.className='dec-group-label';gA.textContent='At Casting';
+  info.appendChild(gA);
+  const cols=document.createElement('div');cols.className='dec-cols';
+  AGENTS.forEach(a=>cols.appendChild(buildDeciderCol(a,true)));
   info.appendChild(cols);
+  const gR=document.createElement('div');gR.className='dec-group-label';gR.textContent='Remote Markets';
+  info.appendChild(gR);
+  const cols2=document.createElement('div');cols2.className='dec-cols';
+  REMOTE_DECIDERS.forEach(a=>cols2.appendChild(buildDeciderCol(a,false)));
+  info.appendChild(cols2);
   /* exclude-from-count toggle */
   const exRow=document.createElement('div');exRow.className='ex-row';
   const ex=document.createElement('button');
@@ -909,7 +930,7 @@ function openViewer(e){
    ========================================================= */
 function decLine(e){
   const parts=[];
-  if(e.decisions){ AGENTS.forEach(a=>{ if(e.decisions[a]) parts.push(a+': '+e.decisions[a]); }); }
+  if(e.decisions){ ALL_DECIDERS.forEach(a=>{ if(e.decisions[a]) parts.push(a+': '+e.decisions[a]); }); }
   return parts.join(' · ');
 }
 async function exportPDF(todayOnly){
