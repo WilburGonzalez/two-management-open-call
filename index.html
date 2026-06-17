@@ -386,6 +386,7 @@
       <option value="az">Name A–Z</option>
       <option value="za">Name Z–A</option>
       <option value="height">Height (tall→short)</option>
+      <option value="heightAsc">Height (short→tall)</option>
       <option value="age">Age (high→low)</option>
     </select>
   </div>
@@ -807,6 +808,7 @@ function sortEntries(arr){
   if(SORT_BY==='az') a.sort((x,y)=>(x.first+' '+x.last).toLowerCase().localeCompare((y.first+' '+y.last).toLowerCase()));
   else if(SORT_BY==='za') a.sort((x,y)=>(y.first+' '+y.last).toLowerCase().localeCompare((x.first+' '+x.last).toLowerCase()));
   else if(SORT_BY==='height') a.sort((x,y)=>heightCm(y)-heightCm(x));
+  else if(SORT_BY==='heightAsc') a.sort((x,y)=>{ const hx=heightCm(x),hy=heightCm(y); if(hx<0)return 1; if(hy<0)return -1; return hx-hy; });
   else if(SORT_BY==='age') a.sort((x,y)=>((y.age||0)-(x.age||0)));
   else a.sort((x,y)=>{ /* number: numbered first asc, remote (null) last by time */
     if(x.num&&y.num) return x.num-y.num;
