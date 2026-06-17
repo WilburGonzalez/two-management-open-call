@@ -376,15 +376,16 @@
   </div>
   <div class="filter-bar">
     <span class="filter-label">Decision by:</span>
-    <select id="deciderSel" onchange="DECIDER_VIEW=this.value;DEC_FILTER='';syncDecChips();renderList(true)">
-      <option value="">Anyone</option>
-      <option value="Katie">Katie</option>
-      <option value="Ana">Ana</option>
-      <option value="Wilbur">Wilbur</option>
-      <option value="NY">NY</option>
-      <option value="Germany">Germany</option>
-      <option value="Scandi">Scandi</option>
-    </select>
+    <button class="chip active" data-decider="" onclick="setDeciderView(this)">Anyone</button>
+    <button class="chip" data-decider="Katie" onclick="setDeciderView(this)">Katie</button>
+    <button class="chip" data-decider="Ana" onclick="setDeciderView(this)">Ana</button>
+    <button class="chip" data-decider="Wilbur" onclick="setDeciderView(this)">Wilbur</button>
+    <button class="chip" data-decider="NY" onclick="setDeciderView(this)">NY</button>
+    <button class="chip" data-decider="Germany" onclick="setDeciderView(this)">Germany</button>
+    <button class="chip" data-decider="Scandi" onclick="setDeciderView(this)">Scandi</button>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Decision:</span>
     <button class="chip active" data-dec="" onclick="setDecFilter(this)">All</button>
     <button class="chip" data-dec="Sign" onclick="setDecFilter(this)">Sign</button>
     <button class="chip" data-dec="Unsure" onclick="setDecFilter(this)">Unsure</button>
@@ -777,6 +778,12 @@ function setGenFilter(btn){
 function toggleUnseen(){
   UNSEEN_ONLY=!UNSEEN_ONLY;
   $('unseenBtn').textContent=UNSEEN_ONLY?'Show all':'Unseen only';
+  if(CACHE.length) renderList(true); else refreshAdmin();
+}
+function setDeciderView(btn){
+  DECIDER_VIEW=btn.getAttribute('data-decider');
+  btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
   if(CACHE.length) renderList(true); else refreshAdmin();
 }
 function syncDecChips(){
