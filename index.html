@@ -383,6 +383,7 @@
     <button class="chip" data-decider="NY" onclick="setDeciderView(this)">NY</button>
     <button class="chip" data-decider="Germany" onclick="setDeciderView(this)">Germany</button>
     <button class="chip" data-decider="Scandi" onclick="setDeciderView(this)">Scandi</button>
+    <button class="chip" data-decider="Kevin" onclick="setDeciderView(this)">Kevin</button>
   </div>
   <div class="filter-bar">
     <span class="filter-label">Decision:</span>
@@ -424,9 +425,12 @@ const F_SELFIE = "flduTuKYg9IrRqzX7";   // Selfie attachment field
 const F_PHOTOS = "fld4oYp8NReFAXDKn";   // Additional Photos attachment field
 const AGENTS   = ["Katie","Ana","Wilbur"];                 // in-person; their decision also marks "seen"
 const REMOTE_DECIDERS = ["NY","Germany","Scandi"];          // remote markets, decide later
-const ALL_DECIDERS = AGENTS.concat(REMOTE_DECIDERS);
+const INVITE_DECIDERS = ["Kevin"];                          // invite-list reviewers (Yes/No/Maybe)
+const ALL_DECIDERS = AGENTS.concat(REMOTE_DECIDERS).concat(INVITE_DECIDERS);
 const DECIDER_FIELD = {Katie:'Katie Decision',Ana:'Ana Decision',Wilbur:'Wilbur Decision',
-  NY:'NY Decision',Germany:'Germany Decision',Scandi:'Scandi Decision'};
+  NY:'NY Decision',Germany:'Germany Decision',Scandi:'Scandi Decision',Kevin:'Kevin Decision'};
+const DECIDER_LABEL = {Kevin:'Kevin (Rocket Guest list)'};  // custom column header text
+const DECIDER_OPTS  = {Kevin:[['Yes','sign'],['Maybe','unsure'],['No','pass']]}; // custom buttons
 
 const SELFIE_DIM=900, SELFIE_Q=0.8;     // selfie: screening quality
 const UPLOAD_DIM=2200, UPLOAD_Q=0.9;     // digitals: near-original, stays under Airtable's 5MB
@@ -731,7 +735,7 @@ async function loadEntries(){
         seenBy:f['Seen By']||[],
         qn:f['Queue Number']||null,
         decisions:{Katie:f['Katie Decision']||'',Ana:f['Ana Decision']||'',Wilbur:f['Wilbur Decision']||'',
-          NY:f['NY Decision']||'',Germany:f['Germany Decision']||'',Scandi:f['Scandi Decision']||''},
+          NY:f['NY Decision']||'',Germany:f['Germany Decision']||'',Scandi:f['Scandi Decision']||'',Kevin:f['Kevin Decision']||''},
         motherAgent:f['Mother Agent']||'', motherAgentCountry:f['Mother Agent Country']||'',
         agMilan:f['Milan Agency']||'', agNY:f['NY Agency']||'', agLA:f['LA Agency']||'',
         agGER:f['German Agency']||'', agESP:f['Spain Agency']||'', agSCAN:f['Scandinavia Agency']||'',
@@ -859,7 +863,10 @@ function renderList(quiet){
   const excl=entries.filter(e=>e.excluded).length;
   const unseen=inPerson.filter(e=>!effectiveSeen(e).length).length;
   const sign=entries.filter(e=>!e.excluded&&e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]==='Sign')).length;
-  $('adminCount').textContent=inPerson.length+' in-person · '+remote+' remote · '+unseen+' unseen · '+sign+' sign'+(excl?' · '+excl+' excluded':'');
+  const kY=entries.filter(e=>!e.excluded&&e.decisions&&e.decisions.Kevin==='Yes').length;
+  const kM=entries.filter(e=>!e.excluded&&e.decisions&&e.decisions.Kevin==='Maybe').length;
+  const kN=entries.filter(e=>!e.excluded&&e.decisions&&e.decisions.Kevin==='No').length;
+  $('adminCount').textContent=inPerson.length+' in-person · '+remote+' remote · '+unseen+' unseen · '+sign+' sign'+(excl?' · '+excl+' excluded':'')+' | Rocket: '+kY+' yes · '+kM+' maybe · '+kN+' no';
   if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
   list.innerHTML='';
   let shown=entries.filter(passesFilters);
@@ -917,9 +924,10 @@ function adminCard(e,n){
   /* decision groups: At Casting (marks seen) + Remote Markets */
   function buildDeciderCol(name, marksSeen){
     const col=document.createElement('div');col.className='dec-col';
-    const h=document.createElement('div');h.className='dec-head';h.textContent=name;
+    const h=document.createElement('div');h.className='dec-head';h.textContent=DECIDER_LABEL[name]||name;
     col.appendChild(h);
-    [['Sign','sign'],['Unsure','unsure'],['Pass','pass']].forEach(([val,cls])=>{
+    const opts=DECIDER_OPTS[name]||[['Sign','sign'],['Unsure','unsure'],['Pass','pass']];
+    opts.forEach(([val,cls])=>{
       const b=document.createElement('button');
       const cur=(e.decisions&&e.decisions[name])||'';
       b.className='dec-btn '+cls+(cur===val?' on':'');
@@ -955,6 +963,11 @@ function adminCard(e,n){
   const cols2=document.createElement('div');cols2.className='dec-cols';
   REMOTE_DECIDERS.forEach(a=>cols2.appendChild(buildDeciderCol(a,false)));
   info.appendChild(cols2);
+  const gI=document.createElement('div');gI.className='dec-group-label';gI.textContent='Rocket Guest List';
+  info.appendChild(gI);
+  const cols3=document.createElement('div');cols3.className='dec-cols';
+  INVITE_DECIDERS.forEach(a=>cols3.appendChild(buildDeciderCol(a,false)));
+  info.appendChild(cols3);
   /* exclude-from-count toggle */
   const exRow=document.createElement('div');exRow.className='ex-row';
   const ex=document.createElement('button');
