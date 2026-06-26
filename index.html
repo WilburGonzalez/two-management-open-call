@@ -131,6 +131,7 @@
   .chip{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;
     border:1px solid #000;background:#fff;color:#000;padding:7px 14px;cursor:pointer;}
   .chip.active{background:#000;color:#fff;}
+  #archBtn.active-arch{background:#b00;color:#fff;border-color:#b00;}
   #staffSearch{flex:1;min-width:140px;border:1px solid #000;padding:8px 10px;font-size:13px;background:#fff;color:#000;}
   #sortSel{border:1px solid #000;padding:8px 10px;font-size:13px;background:#fff;color:#000;}
   .att-tag{font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:3px;vertical-align:middle;}
@@ -355,6 +356,7 @@
     </div>
     <div class="admin-actions">
       <button onclick="toggleUnseen()" class="ghost" id="unseenBtn">Unseen only</button>
+      <button onclick="toggleArchived()" class="ghost" id="archBtn">Archived</button>
       <button onclick="refreshAdmin()" class="ghost">Refresh</button>
       <button onclick="exportPDF(true)">PDF Today</button>
       <button onclick="exportPDF(false)">PDF All</button>
@@ -415,7 +417,7 @@
    - Records created via Airtable REST API (field names)
    - Selfie/photos uploaded via content.airtable.com (base64)
    ========================================================= */
-const AIRTABLE_TOKEN = ["pati","LaUpBqylZAIcB"].join("") + "." + ["78578ee4dcf3f9ac757f9ae3","da1c985e0da47dc1918e8d7f3b7211a7c0079bef"].join("");
+const AIRTABLE_TOKEN = ["path","qrYkXIo5AxbWc"].join("") + "." + ["21f7547bb460cba36979595b20b3008e","22a8eb342376d9c7db4dbbf29d9e89ad"].join("");
 const BASE_ID  = "appoMVJ5pVjiTbHs0";
 const TABLE_ID = "tblG9eNdSOcVeqo3p";
 const API      = "https://api.airtable.com/v0/"+BASE_ID+"/"+TABLE_ID;
@@ -723,6 +725,7 @@ async function loadEntries(){
         first:f['First Name']||'', last:f['Last Name']||'',
         attendance:f['Attendance']||'',
         excluded:!!f['Exclude from Count'],
+        archived:!!f['Archived'],
         gender:f['Gender']||'', age:f['Age']||'',
         mobile:f['Mobile']||'', email:f['Email']||'',
         currentCity:f['Current City']||'',
@@ -768,7 +771,7 @@ function exitAdmin(){
   document.getElementById('signinView').classList.remove('hidden');
 }
 
-let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num', GEN_FILTER='', DECIDER_VIEW='';
+let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num', GEN_FILTER='', DECIDER_VIEW='', SHOW_ARCH=false;
 function setAttFilter(btn){
   ATT_FILTER=btn.getAttribute('data-att');
   btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
@@ -784,6 +787,13 @@ function setGenFilter(btn){
 function toggleUnseen(){
   UNSEEN_ONLY=!UNSEEN_ONLY;
   $('unseenBtn').textContent=UNSEEN_ONLY?'Show all':'Unseen only';
+  if(CACHE.length) renderList(true); else refreshAdmin();
+}
+function toggleArchived(){
+  SHOW_ARCH=!SHOW_ARCH;
+  const b=$('archBtn');
+  b.textContent=SHOW_ARCH?'Back to active':'Archived';
+  b.classList.toggle('active-arch', SHOW_ARCH);
   if(CACHE.length) renderList(true); else refreshAdmin();
 }
 function setDeciderView(btn){
@@ -807,6 +817,8 @@ function effectiveSeen(e){
   return [...s];
 }
 function passesFilters(e){
+  if(!SHOW_ARCH && e.archived) return false;
+  if(SHOW_ARCH && !e.archived) return false;
   if(GEN_FILTER && e.gender!==GEN_FILTER) return false;
   if(ATT_FILTER && e.attendance!==ATT_FILTER) return false;
   if(UNSEEN_ONLY && effectiveSeen(e).length) return false;
@@ -858,15 +870,16 @@ function renderList(quiet){
   const list=$('adminList');
   const entries=CACHE;
   const sy=window.scrollY;
-  const inPerson=entries.filter(e=>e.attendance&&e.attendance!=='Remote submission'&&!e.excluded);
-  const remote=entries.filter(e=>e.attendance==='Remote submission'&&!e.excluded).length;
-  const excl=entries.filter(e=>e.excluded).length;
+  const inPerson=entries.filter(e=>e.attendance&&e.attendance!=='Remote submission'&&!e.excluded&&!e.archived);
+  const remote=entries.filter(e=>e.attendance==='Remote submission'&&!e.excluded&&!e.archived).length;
+  const excl=entries.filter(e=>e.excluded&&!e.archived).length;
+  const arch=entries.filter(e=>e.archived).length;
   const unseen=inPerson.filter(e=>!effectiveSeen(e).length).length;
-  const sign=entries.filter(e=>!e.excluded&&e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]==='Sign')).length;
-  const kY=entries.filter(e=>!e.excluded&&e.decisions&&e.decisions.Kevin==='Yes').length;
-  const kM=entries.filter(e=>!e.excluded&&e.decisions&&e.decisions.Kevin==='Maybe').length;
-  const kN=entries.filter(e=>!e.excluded&&e.decisions&&e.decisions.Kevin==='No').length;
-  $('adminCount').textContent=inPerson.length+' in-person · '+remote+' remote · '+unseen+' unseen · '+sign+' sign'+(excl?' · '+excl+' excluded':'')+' | Rocket: '+kY+' yes · '+kM+' maybe · '+kN+' no';
+  const sign=entries.filter(e=>!e.excluded&&!e.archived&&e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]==='Sign')).length;
+  const kY=entries.filter(e=>!e.excluded&&!e.archived&&e.decisions&&e.decisions.Kevin==='Yes').length;
+  const kM=entries.filter(e=>!e.excluded&&!e.archived&&e.decisions&&e.decisions.Kevin==='Maybe').length;
+  const kN=entries.filter(e=>!e.excluded&&!e.archived&&e.decisions&&e.decisions.Kevin==='No').length;
+  $('adminCount').textContent=(SHOW_ARCH?('Viewing '+arch+' archived'):(inPerson.length+' in-person · '+remote+' remote · '+unseen+' unseen · '+sign+' sign'+(excl?' · '+excl+' excluded':'')+(arch?' · '+arch+' archived':'')+' | Rocket: '+kY+' yes · '+kM+' maybe · '+kN+' no'));
   if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
   list.innerHTML='';
   let shown=entries.filter(passesFilters);
@@ -985,8 +998,16 @@ function adminCard(e,n){
   };
   exRow.appendChild(ex);
   info.appendChild(exRow);
-  const del=document.createElement('button');del.className='cdel';del.textContent='Delete';
-  del.onclick=async()=>{ if(confirm('Delete '+e.first+' '+e.last+'?')){ await fetch(API+'/'+e.id,{method:'DELETE',headers:HDRS}); refreshAdmin(); } };
+  const del=document.createElement('button');del.className='cdel';
+  del.textContent=e.archived?'Un-archive':'Archive';
+  del.onclick=async()=>{
+    const newVal=!e.archived;
+    if(newVal && !confirm('Archive '+e.first+' '+e.last+'? They will be hidden from the list but recoverable.')) return;
+    await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,body:JSON.stringify({fields:{'Archived':newVal}})});
+    e.archived=newVal;
+    if(VIEWER_OPEN){const v=document.querySelector('.viewer'); if(v){v.remove();VIEWER_OPEN=false;}}
+    refreshAdmin();
+  };
   info.appendChild(del);
   card.appendChild(info);
   return card;
@@ -1021,7 +1042,7 @@ function decLine(e){
 }
 async function exportPDF(todayOnly){
   let entries=await loadEntries();
-  entries=entries.filter(e=>passesFilters(e) && !e.excluded);
+  entries=entries.filter(e=>passesFilters(e) && !e.excluded && !e.archived);
   if(todayOnly) entries=entries.filter(e=>isToday(e.ts));
   if(!entries.length){ alert('Nothing to export for this selection.'); return; }
   const w=window.open('','_blank');
