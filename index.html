@@ -392,6 +392,7 @@
     <button class="chip" data-dec="Sign" onclick="setDecFilter(this)">Sign</button>
     <button class="chip" data-dec="Unsure" onclick="setDecFilter(this)">Unsure</button>
     <button class="chip" data-dec="Pass" onclick="setDecFilter(this)">Pass</button>
+    <button class="chip" data-dec="__NONE__" onclick="setDecFilter(this)">No response</button>
     <input type="text" id="staffSearch" placeholder="Search name / # / IG" oninput="SEARCH_Q=this.value.trim().toLowerCase();renderList()">
     <select id="sortSel" onchange="SORT_BY=this.value;renderList(true)">
       <option value="num">Number (low→high)</option>
@@ -822,8 +823,15 @@ function passesFilters(e){
   if(UNSEEN_ONLY && effectiveSeen(e).length) return false;
   if(DECIDER_VIEW){
     const d=(e.decisions&&e.decisions[DECIDER_VIEW])||'';
-    if(DEC_FILTER){ if(d!==DEC_FILTER) return false; }
-  } else if(DEC_FILTER && !(e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]===DEC_FILTER))) return false;
+    if(DEC_FILTER){
+      if(DEC_FILTER==='__NONE__'){ if(d) return false; }     // agent has NOT decided
+      else if(d!==DEC_FILTER) return false;
+    }
+  } else if(DEC_FILTER){
+    if(DEC_FILTER==='__NONE__'){
+      if(e.decisions && ALL_DECIDERS.some(a=>e.decisions[a])) return false;  // someone decided → exclude
+    } else if(!(e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]===DEC_FILTER))) return false;
+  }
   if(SEARCH_Q){
     const name=(e.first+' '+e.last).toLowerCase();
     const ig=(e.instagram||'').toLowerCase();
@@ -874,11 +882,14 @@ function renderList(quiet){
   const arch=entries.filter(e=>e.archived).length;
   const unseen=inPerson.filter(e=>!effectiveSeen(e).length).length;
   const sign=entries.filter(e=>!e.excluded&&!e.archived&&e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]==='Sign')).length;
-  $('adminCount').textContent=(SHOW_ARCH?('Viewing '+arch+' archived'):(inPerson.length+' in-person · '+remote+' remote · '+unseen+' unseen · '+sign+' sign'+(excl?' · '+excl+' excluded':'')+(arch?' · '+arch+' archived':'')));
-  if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
-  list.innerHTML='';
   let shown=entries.filter(passesFilters);
   shown=sortEntries(shown);
+  const totalPool=entries.filter(e=>SHOW_ARCH?e.archived:!e.archived).length;
+  const filterActive=!!(GEN_FILTER||ATT_FILTER||UNSEEN_ONLY||DEC_FILTER||DECIDER_VIEW||SEARCH_Q);
+  const matchTxt=filterActive?('Showing '+shown.length+' of '+totalPool+(DECIDER_VIEW?(' · '+DECIDER_VIEW):'')+' — '):'';
+  $('adminCount').textContent=matchTxt+(SHOW_ARCH?('Viewing '+arch+' archived'):(inPerson.length+' in-person · '+remote+' remote · '+unseen+' unseen · '+sign+' sign'+(excl?' · '+excl+' excluded':'')+(arch?' · '+arch+' archived':'')));
+  if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
+  list.innerHTML='';
   shown.forEach(e=>list.appendChild(adminCard(e,e.num)));
   if(!list.children.length){ list.innerHTML='<div class="empty">No one matches this filter.</div>'; }
   if(quiet) window.scrollTo(0,sy);
