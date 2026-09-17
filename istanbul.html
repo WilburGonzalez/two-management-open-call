@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="color-scheme" content="light only">
+<title>Two Management — Open Call Istanbul</title>
+<style>
+  :root{
+    color-scheme: light only;
+    --ink:#000000;
+    --paper:#ffffff;
+    --line:#000000;
+    --muted:#555;
+    --field:#ffffff;
+    --accent:#000000;
+    --err:#b00020;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{background:#ffffff !important;color:#111111 !important;
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  body{min-height:100vh;}
+  input,select,textarea{color:#111111 !important;}
+
+  /* ---- Masthead ---- */
+  .masthead{border-bottom:2px solid var(--line);padding:26px 22px 18px;text-align:center;}
+  .agency{font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:var(--ink);font-weight:700;}
+  .title{font-family:Georgia,"Times New Roman",serif;font-weight:400;
+    font-size:34px;line-height:1.02;margin-top:10px;letter-spacing:-.01em;}
+  .subtitle{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-top:12px;}
+  .datebar{margin-top:14px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:#000;font-weight:600;}
+  .datebar .dot{margin:0 8px;color:#aaa;}
+  .datebar #liveCount{font-weight:700;}
+  .rule-thin{height:1px;background:var(--line);margin:0;}
+
+  .wrap{max-width:560px;margin:0 auto;padding:22px;}
+
+  /* ---- Form ---- */
+  .eyebrow{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);
+    margin:26px 0 8px;border-bottom:1px solid #ddd;padding-bottom:6px;}
+  label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink);font-weight:600;margin:16px 0 6px;}
+  label .opt{color:var(--muted);font-weight:400;letter-spacing:.05em;text-transform:none;}
+  input[type=text],input[type=tel],input[type=email],input[type=date],input[type=number],select{
+    width:100%;background:#ffffff;border:1px solid #000000;border-radius:0;
+    padding:13px 12px;font-size:16px;color:#000000;font-family:inherit;}
+  input:focus,select:focus{outline:none;border-color:#000;background:#fff;border-width:2px;}
+  .row{display:flex;gap:12px;}
+  .row > div{flex:1;}
+  .phone-wrap{display:flex;gap:0;}
+  .phone-wrap .ccode{flex:0 0 96px;border-right:none;}
+  .phone-wrap input{flex:1;}
+
+  /* ---- Selfie ---- */
+  .photo-block{margin-top:8px;}
+  .photo-btns{display:flex;gap:12px;flex-wrap:wrap;}
+  .photo-btns .pbtn{flex:1;min-width:140px;}
+  .pbtn{display:flex;align-items:center;justify-content:center;gap:8px;
+    background:#fff;border:1px solid var(--ink);padding:14px;font-size:12px;
+    letter-spacing:.14em;text-transform:uppercase;font-weight:600;cursor:pointer;}
+  .pbtn:active{background:var(--ink);color:#fff;}
+  .pbtn.req{border-style:solid;}
+  .preview-strip{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;}
+  .thumb{position:relative;width:96px;height:128px;background:var(--field);
+    border:1px solid #ddd;overflow:hidden;}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb .tag{position:absolute;left:0;bottom:0;right:0;background:rgba(0,0,0,.72);
+    color:#fff;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    text-align:center;padding:3px;}
+  .thumb .x{position:absolute;top:4px;right:4px;background:#fff;border:1px solid #000;
+    width:22px;height:22px;line-height:20px;text-align:center;font-size:14px;cursor:pointer;}
+
+  .hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4;}
+
+  .submit{width:100%;margin-top:30px;background:var(--ink);color:#fff;border:none;
+    padding:18px;font-size:13px;letter-spacing:.26em;text-transform:uppercase;
+    font-weight:700;cursor:pointer;}
+  .submit:disabled{background:#999;cursor:not-allowed;}
+  .submit:active:not(:disabled){background:#333;}
+
+  .err{color:var(--err);font-size:12px;margin-top:14px;display:none;text-align:center;}
+  .err.show{display:block;}
+
+  /* ---- Confirmation ---- */
+  .confirm{text-align:center;padding:70px 24px;}
+  .confirm .check{font-family:Georgia,serif;font-size:48px;}
+  .confirm h2{font-family:Georgia,serif;font-weight:400;font-size:28px;margin:14px 0 8px;}
+  .confirm p{color:var(--muted);font-size:14px;line-height:1.5;}
+  .queue-num{font-family:Georgia,serif;font-size:96px;line-height:1;margin:18px 0 22px;
+    letter-spacing:-.02em;color:#000;}
+  .queue-num small{display:block;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#777;margin-bottom:10px;}
+  .confirm button{margin-top:34px;background:#fff;border:1px solid var(--ink);
+    padding:14px 30px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    font-weight:600;cursor:pointer;}
+
+  /* ---- Footer / admin link ---- */
+  .foot{border-top:1px solid #ddd;margin-top:40px;padding:20px;text-align:center;}
+  .foot a{color:var(--muted);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+    text-decoration:none;cursor:pointer;}
+
+  /* ---- Admin ---- */
+  .admin-bar{border-bottom:2px solid var(--line);padding:20px 22px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .admin-bar h1{font-family:Georgia,serif;font-weight:400;font-size:22px;}
+  .admin-bar .count{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+  .admin-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .admin-actions button{background:var(--ink);color:#fff;border:none;padding:11px 16px;
+    font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;cursor:pointer;}
+  .admin-actions button.ghost{background:#fff;color:var(--ink);border:1px solid var(--ink);}
+  .admin-list{padding:14px 22px 60px;}
+  .card{border:1px solid #ddd;margin-bottom:14px;display:flex;flex-direction:column;align-items:center;gap:14px;padding:12px;}
+  .card .cphoto{width:160px;height:210px;flex-shrink:0;background:var(--field);
+    border:1px solid #ddd;overflow:hidden;margin:0 auto;}
+  .card .cphoto img{width:100%;height:100%;object-fit:cover;}
+  .card .cinfo{flex:1;width:100%;min-width:0;}
+  .card .cname{font-family:Georgia,serif;font-size:18px;}
+  .card .cmeta{font-size:12px;color:#444;line-height:1.55;margin-top:5px;}
+  .card .cmeta b{color:#000;font-weight:600;}
+  .card .cdel{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--err);
+    border:1px solid var(--err);background:#fff;padding:6px 9px;cursor:pointer;align-self:flex-start;}
+  .seen-row{display:flex;gap:8px;margin:10px 0;}
+  .seen-btn{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+    border:1px solid #000;background:#fff;color:#000;padding:8px 14px;cursor:pointer;}
+  .seen-btn.active{background:#000;color:#fff;}
+  .seen-btn:disabled{opacity:.5;}
+  .filter-bar{display:flex;align-items:center;gap:8px;padding:12px 22px;border-bottom:1px solid #ddd;flex-wrap:wrap;}
+  .filter-label{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#777;font-weight:700;}
+  .chip{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;
+    border:1px solid #000;background:#fff;color:#000;padding:7px 14px;cursor:pointer;}
+  .chip.active{background:#000;color:#fff;}
+  #archBtn.active-arch{background:#b00;color:#fff;border-color:#b00;}
+  #staffSearch{flex:1;min-width:140px;border:1px solid #000;padding:8px 10px;font-size:13px;background:#fff;color:#000;}
+  #sortSel{border:1px solid #000;padding:8px 10px;font-size:13px;background:#fff;color:#000;}
+  .att-tag{font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:3px;vertical-align:middle;}
+  .att-fri{background:#0a7d33;color:#fff;}
+  .att-sat{background:#1156b8;color:#fff;}
+  .att-rem{background:#888;color:#fff;}
+  .ex-row{margin:8px 0 2px;}
+  .ex-btn{font-size:11px;letter-spacing:.04em;font-weight:600;border:1px solid #bbb;
+    background:#fff;color:#777;padding:7px 12px;cursor:pointer;}
+  .ex-btn.on{background:#b00020;border-color:#b00020;color:#fff;}
+  .card.excluded{opacity:.5;}
+  .dec-row{display:flex;gap:8px;margin:4px 0 10px;}
+  .dec-cols{display:flex;gap:0;margin:8px 0 10px;border:1px solid #ddd;}
+  .dec-col{flex:1;display:flex;flex-direction:column;gap:6px;padding:10px;}
+  .dec-col+.dec-col{border-left:1px solid #ddd;}
+  .dec-head{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    text-align:center;padding-bottom:4px;border-bottom:1px solid #eee;}
+  .dec-col .dec-btn{width:100%;padding:8px 4px;font-size:11px;}
+  .dec-group-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#999;
+    font-weight:700;margin:10px 0 2px;}
+  .dec-head{font-size:10px;}
+  .dec-btn{font-size:12px;letter-spacing:.04em;font-weight:600;
+    border:1px solid #999;background:#fff;color:#555;padding:8px 14px;cursor:pointer;}
+  .dec-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    align-self:center;min-width:46px;}
+  .dec-btn.sign.on{background:#0a7d33;border-color:#0a7d33;color:#fff;}
+  .dec-btn.unsure.on{background:#b58900;border-color:#b58900;color:#fff;}
+  .agent-pick{font-family:Georgia,serif;font-size:26px;background:#fff;border:none;
+    padding:18px 60px;margin:10px;cursor:pointer;}
+  .dec-btn.pass.on{background:#b00020;border-color:#b00020;color:#fff;}
+  .viewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:50;overflow-y:auto;
+    display:flex;flex-direction:column;align-items:center;padding:30px 14px;}
+  .viewer img{max-width:96%;margin-bottom:16px;border:2px solid #fff;}
+  .viewer .vname{color:#fff;font-family:Georgia,serif;font-size:22px;margin-bottom:16px;}
+  .viewer .vclose{position:fixed;top:14px;right:18px;color:#fff;font-size:34px;cursor:pointer;
+    background:none;border:none;line-height:1;}
+  .empty{text-align:center;color:var(--muted);padding:80px 24px;font-size:14px;line-height:1.5;}
+  .loading{text-align:center;color:var(--muted);padding:60px;font-size:13px;}
+
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<!-- ============ SIGN-IN VIEW ============ -->
+<div id="signinView">
+  <div class="masthead">
+    <div class="agency">Two Management</div>
+    <div class="title">Open Call</div>
+    <div class="subtitle">Istanbul&nbsp;·&nbsp;September&nbsp;2026</div>
+    <div class="datebar">
+      <span id="todayDate"></span>
+      <span class="dot">·</span>
+      <span id="liveCount">—</span> signed in today
+    </div>
+  </div>
+
+  <div class="wrap" id="formWrap">
+    <div class="eyebrow">Attendance</div>
+    <label>Will you attend the Istanbul casting in person?</label>
+    <select id="attendance">
+      <option value="">Select…</option>
+      <option value="Istanbul casting">Yes — in person</option>
+      <option value="Remote submission">No — remote submission only</option>
+    </select>
+
+    <div class="eyebrow">Talent</div>
+
+    <div class="row">
+      <div>
+        <label>First name</label>
+        <input type="text" id="firstName" autocomplete="given-name">
+      </div>
+      <div>
+        <label>Last name</label>
+        <input type="text" id="lastName" autocomplete="family-name">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Mobile</label>
+        <div class="phone-wrap">
+          <select id="mobileCode" class="ccode"></select>
+          <input type="tel" id="mobile" autocomplete="tel" inputmode="numeric" placeholder="phone number">
+        </div>
+      </div>
+      <div>
+        <label>Email</label>
+        <input type="email" id="email" autocomplete="email" autocapitalize="none" inputmode="email" placeholder="name@email.com">
+      </div>
+    </div>
+
+    <label>Age</label>
+    <select id="age"><option value="">Select…</option></select>
+
+    <div class="row">
+      <div>
+        <label>Birth country</label>
+        <select id="birthCountry" class="country-sel"><option value="">Select…</option></select>
+      </div>
+      <div>
+        <label>Passport country</label>
+        <select id="passportCountry" class="country-sel"><option value="">Select…</option></select>
+      </div>
+    </div>
+
+    <label>Current city <span class="opt">where you live after Istanbul shows</span></label>
+    <input type="text" id="currentCity">
+
+    <div class="row">
+      <div>
+        <label>Gender</label>
+        <select id="gender">
+          <option value="">Select…</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+      <div>
+        <label>Height</label>
+        <select id="height"><option value="">Select gender first</option></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Waist</label>
+        <select id="waist"><option value="">Select gender first</option></select>
+      </div>
+      <div>
+        <label>Shoe</label>
+        <select id="shoe"><option value="">Select…</option></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Hair</label>
+        <select id="hair"><option value="">Select…</option></select>
+      </div>
+      <div>
+        <label>Eyes</label>
+        <select id="eyes"><option value="">Select…</option></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Instagram</label>
+        <input type="text" id="instagram" placeholder="@handle" autocapitalize="none">
+      </div>
+      <div>
+        <label>Portfolio / book link</label>
+        <input type="text" id="portfolio" placeholder="models.com/…" autocapitalize="none" inputmode="url">
+      </div>
+    </div>
+
+    <div class="eyebrow">Representation</div>
+
+    <div class="row">
+      <div>
+        <label>Mother Agent</label>
+        <input type="text" id="motherAgent">
+      </div>
+      <div>
+        <label>Mother Agent country</label>
+        <select id="motherAgentCountry" class="country-sel"><option value="">Select…</option></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div><label>Milan agency</label><input type="text" id="agMilan"></div>
+      <div><label>New York agency</label><input type="text" id="agNY"></div>
+    </div>
+    <div class="row">
+      <div><label>LA agency</label><input type="text" id="agLA"></div>
+      <div><label>German agency</label><input type="text" id="agGER"></div>
+    </div>
+    <div class="row">
+      <div><label>Spain agency</label><input type="text" id="agESP"></div>
+      <div><label>Scandinavia agency</label><input type="text" id="agSCAN"></div>
+    </div>
+
+    <div class="eyebrow">Photos</div>
+    <div class="photo-block">
+      <div class="photo-btns">
+        <div class="pbtn req" onclick="document.getElementById('selfieInput').click()">📷 Selfie · required</div>
+        <div class="pbtn" onclick="document.getElementById('uploadInput').click()">⬆ Upload digitals</div>
+      </div>
+      <input type="file" id="selfieInput" accept="image/*" capture="user" class="hidden">
+      <input type="file" id="uploadInput" accept="image/*" multiple class="hidden">
+      <div class="preview-strip" id="previewStrip"></div>
+      <div class="hint">Selfie is required. Photos are compressed and used only to match faces to names on the printed call sheet.</div>
+    </div>
+
+    <button class="submit" id="submitBtn">Sign In</button>
+    <div class="err" id="formErr"></div>
+  </div>
+
+  <div class="wrap confirm hidden" id="confirmWrap">
+    <div class="check">✓</div>
+    <h2 id="confirmName">You're signed in.</h2>
+    <div class="queue-num" id="queueNum"></div>
+    <p id="confirmNote" style="color:#b00020;font-weight:600"></p>
+    <button id="notMeBtn" class="hidden" onclick="notMe()">This is not me — sign in as a new person</button>
+    <p>Keep this screen and show your number when called.<br>Thank you — please wait to be seen by an agent.<br>Two Management — Istanbul Open Call.</p>
+  </div>
+
+  <div class="foot">
+    <a onclick="goAdmin()" style="font-size:9px;color:#bbb;">Staff</a>
+  </div>
+</div>
+
+<!-- ============ ADMIN VIEW ============ -->
+<div id="adminView" class="hidden">
+  <div class="admin-bar">
+    <div>
+      <h1>Open Call · Istanbul</h1>
+      <div class="count" id="adminCount">0 signed in</div>
+    </div>
+    <div class="admin-actions">
+      <button onclick="toggleUnseen()" class="ghost" id="unseenBtn">Unseen only</button>
+      <button onclick="toggleArchived()" class="ghost" id="archBtn">Archived</button>
+      <button onclick="refreshAdmin()" class="ghost">Refresh</button>
+      <button onclick="exportPDF(true)">PDF Today</button>
+      <button onclick="exportPDF(false)">PDF All</button>
+      <button onclick="exitAdmin()" class="ghost">Exit</button>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Attending:</span>
+    <button class="chip active" data-att="" onclick="setAttFilter(this)">All</button>
+    <button class="chip" data-att="Istanbul casting" onclick="setAttFilter(this)">In person</button>
+    <button class="chip" data-att="Remote submission" onclick="setAttFilter(this)">Remote</button>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Show:</span>
+    <button class="chip active" data-gen="" onclick="setGenFilter(this)">All</button>
+    <button class="chip" data-gen="Male" onclick="setGenFilter(this)">Men</button>
+    <button class="chip" data-gen="Female" onclick="setGenFilter(this)">Women</button>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Decision by:</span>
+    <button class="chip active" data-decider="" onclick="setDeciderView(this)">Anyone</button>
+    <button class="chip" data-decider="Katie" onclick="setDeciderView(this)">Katie</button>
+    <button class="chip" data-decider="Ana" onclick="setDeciderView(this)">Ana</button>
+    <button class="chip" data-decider="Wilbur" onclick="setDeciderView(this)">Wilbur</button>
+    <button class="chip" data-decider="NY" onclick="setDeciderView(this)">NY</button>
+    <button class="chip" data-decider="Germany" onclick="setDeciderView(this)">Germany</button>
+    <button class="chip" data-decider="Scandi" onclick="setDeciderView(this)">Scandi</button>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Decision:</span>
+    <button class="chip active" data-dec="" onclick="setDecFilter(this)">All</button>
+    <button class="chip" data-dec="Sign" onclick="setDecFilter(this)">Sign</button>
+    <button class="chip" data-dec="Unsure" onclick="setDecFilter(this)">Unsure</button>
+    <button class="chip" data-dec="Pass" onclick="setDecFilter(this)">Pass</button>
+    <button class="chip" data-dec="__NONE__" onclick="setDecFilter(this)">No response</button>
+    <input type="text" id="staffSearch" placeholder="Search name / # / IG" oninput="SEARCH_Q=this.value.trim().toLowerCase();renderList()">
+    <select id="sortSel" onchange="SORT_BY=this.value;renderList(true)">
+      <option value="num">Number (low→high)</option>
+      <option value="numDesc">Number (high→low)</option>
+      <option value="az">Name A–Z</option>
+      <option value="za">Name Z–A</option>
+      <option value="height">Height (tall→short)</option>
+      <option value="heightAsc">Height (short→tall)</option>
+      <option value="age">Age (high→low)</option>
+      <option value="ageAsc">Age (low→high)</option>
+    </select>
+  </div>
+  <div class="admin-list" id="adminList">
+    <div class="loading">Loading…</div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   AIRTABLE BACKEND
+   Base: Open Call Istanbul
+   - Records created via Airtable REST API (field names)
+   - Selfie/photos uploaded via content.airtable.com (base64)
+   ========================================================= */
+const AIRTABLE_TOKEN = ["path","qrYkXIo5AxbWc"].join("") + "." + ["21f7547bb460cba36979595b20b3008e","22a8eb342376d9c7db4dbbf29d9e89ad"].join("");
+const BASE_ID  = "appoMVJ5pVjiTbHs0";
+const TABLE_ID = "tblopDXgryTTxBsVa";
+const API      = "https://api.airtable.com/v0/"+BASE_ID+"/"+TABLE_ID;
+const UPLOAD   = "https://content.airtable.com/v0/"+BASE_ID;
+const HDRS     = { "Authorization":"Bearer "+AIRTABLE_TOKEN, "Content-Type":"application/json" };
+const F_SELFIE = "flduTuKYg9IrRqzX7";   // Selfie attachment field
+const F_PHOTOS = "fld4oYp8NReFAXDKn";   // Additional Photos attachment field
+const AGENTS   = ["Katie","Ana","Wilbur"];                 // in-person; their decision also marks "seen"
+const REMOTE_DECIDERS = ["NY","Germany","Scandi"];          // remote markets, decide later
+const ALL_DECIDERS = AGENTS.concat(REMOTE_DECIDERS);
+const DECIDER_FIELD = {Katie:'Katie Decision',Ana:'Ana Decision',Wilbur:'Wilbur Decision',
+  NY:'NY Decision',Germany:'Germany Decision',Scandi:'Scandi Decision'};
+const DECIDER_LABEL = {};
+const DECIDER_OPTS  = {};
+
+const SELFIE_DIM=900, SELFIE_Q=0.8;     // selfie: screening quality
+const UPLOAD_DIM=2200, UPLOAD_Q=0.9;     // digitals: near-original, stays under Airtable's 5MB
+
+let photos = { selfie:null, uploads:[] };
+
+/* ---- image compression ---- */
+function compressImage(file,maxDim,quality){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let {width,height} = img;
+        if(width>height){ if(width>maxDim){height=height*maxDim/width;width=maxDim;} }
+        else { if(height>maxDim){width=width*maxDim/height;height=maxDim;} }
+        const c=document.createElement('canvas');
+        c.width=width;c.height=height;
+        c.getContext('2d').drawImage(img,0,0,width,height);
+        resolve(c.toDataURL('image/jpeg',quality));
+      };
+      img.onerror=reject;
+      img.src=e.target.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---- preview render ---- */
+function renderPreviews(){
+  const strip=document.getElementById('previewStrip');
+  strip.innerHTML='';
+  if(photos.selfie){
+    strip.appendChild(thumbEl(photos.selfie,'Selfie',()=>{photos.selfie=null;renderPreviews();}));
+  }
+  photos.uploads.forEach((u,i)=>{
+    strip.appendChild(thumbEl(u,'Upload',()=>{photos.uploads.splice(i,1);renderPreviews();}));
+  });
+}
+function thumbEl(src,tag,onDel){
+  const d=document.createElement('div');d.className='thumb';
+  const im=document.createElement('img');im.src=src;d.appendChild(im);
+  const t=document.createElement('div');t.className='tag';t.textContent=tag;d.appendChild(t);
+  const x=document.createElement('div');x.className='x';x.textContent='×';x.onclick=onDel;d.appendChild(x);
+  return d;
+}
+
+document.getElementById('selfieInput').addEventListener('change',async e=>{
+  if(e.target.files[0]){
+    try{ photos.selfie=await compressImage(e.target.files[0],SELFIE_DIM,SELFIE_Q); renderPreviews(); }
+    catch(err){ alert('That photo could not be read. Please use the Selfie button to take a new photo with your camera.'); }
+  }
+  e.target.value='';
+});
+document.getElementById('uploadInput').addEventListener('change',async e=>{
+  for(const f of e.target.files){
+    if(photos.uploads.length>=6){ alert('Maximum 6 photos — the rest were skipped.'); break; }
+    try{ photos.uploads.push(await compressImage(f,UPLOAD_DIM,UPLOAD_Q)); }
+    catch(err){ alert('One photo could not be read and was skipped. JPG or PNG works best.'); }
+  }
+  renderPreviews(); e.target.value='';
+});
+
+/* ---- submit ---- */
+const $=id=>document.getElementById(id);
+document.getElementById('submitBtn').addEventListener('click',submitEntry);
+
+let SUBMITTING=false, BYPASS_DUP=false;
+function notMe(){
+  BYPASS_DUP=true;
+  $('notMeBtn').classList.add('hidden');
+  $('confirmWrap').classList.add('hidden');
+  $('formWrap').classList.remove('hidden');
+  window.scrollTo(0,0);
+  showErr('Tap Sign In again to register as a new person with this name.');
+}
+async function submitEntry(){
+  if(SUBMITTING) return;            // double-tap guard
+  SUBMITTING=true;
+  const btn=$('submitBtn');
+  const err=$('formErr');
+  err.classList.remove('show');
+  const done=(msg)=>{ SUBMITTING=false; btn.disabled=false; btn.textContent='Sign In'; if(msg) showErr(msg); };
+
+  const first=$('firstName').value.trim();
+  const last=$('lastName').value.trim();
+  if(!first||!last){ return done('First and last name are required.'); }
+  if(!$('attendance').value){ return done('Please tell us if you will attend Friday, Saturday, or are submitting remotely.'); }
+
+  btn.disabled=true; btn.textContent='Checking…';
+
+  /* duplicate check FIRST: returning models retrieve their number with just their name */
+  if(!BYPASS_DUP){
+    try{
+      const existing=await lightEntries();
+      const dup=existing.find(x=>x.first.toLowerCase()===first.toLowerCase()&&x.last.toLowerCase()===last.toLowerCase());
+      if(dup){
+        done();
+        $('confirmName').textContent="You're already signed in, "+first+".";
+        $('queueNum').innerHTML=dup.num?('<small>Your number</small>#'+dup.num):'<small>Submission received</small>';
+        $('confirmNote').textContent='';
+        $('notMeBtn').classList.remove('hidden');
+        $('formWrap').classList.add('hidden');
+        $('confirmWrap').classList.remove('hidden');
+        window.scrollTo(0,0);
+        return;
+      }
+    }catch(e){}
+  }
+  BYPASS_DUP=false;
+
+  if(!photos.selfie){ return done('A selfie is required to sign in.'); }
+  if(!$('gender').value){ return done('Please select gender.'); }
+  if(!$('height').value){ return done('Please select your height.'); }
+  const rawMobile=$('mobile').value.replace(/[^0-9]/g,'');
+  if(rawMobile){
+    const r=CODE_RANGE[$('mobileCode').value];
+    if(r && (rawMobile.length<r.mn || rawMobile.length>r.mx)){
+      const need=r.mn===r.mx?(r.mn+' digits'):(r.mn+'–'+r.mx+' digits');
+      return done('Mobile number looks wrong for '+r.iso+' — expected '+need+'.');
+    }
+  }
+  const emailVal=$('email').value.trim();
+  if(emailVal && !validEmail(emailVal)){ return done('Enter a valid email address (must include @ and a domain).'); }
+  if(!rawMobile && !emailVal){ return done('Please provide at least one contact: mobile or email.'); }
+
+  btn.textContent='Saving…';
+
+  /* height label "178 cm (5'10\")" -> extract number for the cm field */
+  const heightLabel=$('height').value;
+  const heightCm=heightLabel?parseInt(heightLabel,10):null;
+
+  const fields={
+    "First Name":first,
+    "Last Name":last,
+    "Attendance":$('attendance').value||undefined,
+    "Gender":$('gender').value||undefined,
+    "Age":$('age').value?parseInt($('age').value,10):undefined,
+    "Mobile":rawMobile?($('mobileCode').value+' '+rawMobile):undefined,
+    "Email":emailVal||undefined,
+    "Current City":$('currentCity').value.trim()||undefined,
+    "Birth Country":$('birthCountry').value||undefined,
+    "Passport Country":$('passportCountry').value||undefined,
+    "Height (cm)":heightCm||undefined,
+    "Waist":$('waist').value||undefined,
+    "Shoe":$('shoe').value||undefined,
+    "Hair":$('hair').value||undefined,
+    "Eyes":$('eyes').value||undefined,
+    "Instagram":$('instagram').value.trim()||undefined,
+    "Portfolio Link":(function(){let v=$('portfolio').value.trim();if(!v)return undefined;if(!/^https?:\/\//i.test(v))v='https://'+v;return v;})(),
+    "Mother Agent":$('motherAgent').value.trim()||undefined,
+    "Mother Agent Country":$('motherAgentCountry').value||undefined,
+    "Milan Agency":$('agMilan').value.trim()||undefined,
+    "NY Agency":$('agNY').value.trim()||undefined,
+    "LA Agency":$('agLA').value.trim()||undefined,
+    "German Agency":$('agGER').value.trim()||undefined,
+    "Spain Agency":$('agESP').value.trim()||undefined,
+    "Scandinavia Agency":$('agSCAN').value.trim()||undefined
+  };
+  Object.keys(fields).forEach(k=>{ if(fields[k]===undefined) delete fields[k]; });
+
+  try{
+    /* 1. create the record (one retry on rate-limit) */
+    let createRes=await fetch(API,{method:'POST',headers:HDRS,
+      body:JSON.stringify({records:[{fields:fields}],typecast:true})});
+    if(createRes.status===429){
+      await new Promise(r=>setTimeout(r,1300));
+      createRes=await fetch(API,{method:'POST',headers:HDRS,
+        body:JSON.stringify({records:[{fields:fields}],typecast:true})});
+    }
+    if(!createRes.ok){ throw new Error('create '+createRes.status); }
+    const created=await createRes.json();
+    const recId=created.records[0].id;
+
+    /* 2. upload selfie with retries */
+    btn.textContent='Uploading photo…';
+    let selfieFailed=false;
+    for(let t=0;t<3;t++){
+      try{ await uploadAttachment(recId,F_SELFIE,photos.selfie,'selfie-'+last.toLowerCase()+'.jpg'); selfieFailed=false; break; }
+      catch(err){ selfieFailed=true; if(t<2) await new Promise(r=>setTimeout(r,1500)); }
+    }
+
+    /* 3. upload extra photos (best effort) */
+    for(let i=0;i<photos.uploads.length;i++){
+      btn.textContent='Uploading photo '+(i+2)+'…';
+      try{ await uploadAttachment(recId,F_PHOTOS,photos.uploads[i],'photo-'+(i+1)+'-'+last.toLowerCase()+'.jpg'); }catch(e){}
+    }
+
+    $('confirmName').textContent="You're signed in, "+first+".";
+    $('notMeBtn').classList.add('hidden');
+    $('confirmNote').textContent=selfieFailed?'Your photo did not upload — please mention this at the desk.':'';
+    /* permanent queue number — only for in-person attendees; remote submissions get none */
+    const isRemote=($('attendance').value==='Remote submission');
+    if(isRemote){
+      $('queueNum').innerHTML='<small>Remote submission received</small>';
+    }else{
+      try{
+        const num=await stampQueueNumber(recId);
+        $('queueNum').innerHTML='<small>Your number</small>#'+num;
+      }catch(e){ $('queueNum').innerHTML=''; }
+    }
+    $('formWrap').classList.add('hidden');
+    $('confirmWrap').classList.remove('hidden');
+    window.scrollTo(0,0);
+    updateLiveCount();
+  }catch(ex){
+    showErr('Could not save. Check the connection and try again.');
+  }finally{
+    SUBMITTING=false; btn.disabled=false; btn.textContent='Sign In';
+  }
+}
+
+/* lightweight fetch: names + timestamps only, for counts/dup/number */
+async function lightEntries(){
+  const out=[]; let offset='';
+  do{
+    const url=API+'?pageSize=100&fields%5B%5D=First%20Name&fields%5B%5D=Last%20Name&fields%5B%5D=Queue%20Number&fields%5B%5D=Attendance'+(offset?('&offset='+encodeURIComponent(offset)):'');
+    const res=await fetch(url,{headers:HDRS});
+    if(!res.ok) throw new Error('list '+res.status);
+    const data=await res.json();
+    (data.records||[]).forEach(r=>{
+      out.push({id:r.id,ts:new Date(r.createdTime).getTime(),
+        first:(r.fields||{})['First Name']||'',last:(r.fields||{})['Last Name']||'',
+        qn:(r.fields||{})['Queue Number']||null,
+        attendance:(r.fields||{})['Attendance']||''});
+    });
+    offset=data.offset||'';
+  }while(offset);
+  out.sort((a,b)=>a.ts-b.ts);
+  out.forEach(e=>{ e.num=(e.attendance==='Remote submission')?null:(e.qn||null); });
+  return out;
+}
+
+/* stamp a permanent queue number onto a new record; returns the number */
+async function stampQueueNumber(recId){
+  const all=await lightEntries();
+  const maxStamped=all.reduce((m,e)=>Math.max(m,e.qn||0),0);
+  const num=maxStamped+1;
+  try{
+    await fetch(API+'/'+recId,{method:'PATCH',headers:HDRS,
+      body:JSON.stringify({fields:{'Queue Number':num},typecast:true})});
+  }catch(e){}
+  return num;
+}
+
+/* upload a dataURL image to an Airtable attachment field */
+async function uploadAttachment(recId,fieldId,dataUrl,filename){
+  const base64=dataUrl.split(',')[1];
+  const res=await fetch(UPLOAD+'/'+recId+'/'+fieldId+'/uploadAttachment',{
+    method:'POST',headers:HDRS,
+    body:JSON.stringify({contentType:'image/jpeg',file:base64,filename:filename})
+  });
+  if(!res.ok){ throw new Error('upload '+res.status); }
+  return res.json();
+}
+function showErr(m){const e=$('formErr');e.textContent=m;e.classList.add('show');window.scrollTo(0,document.body.scrollHeight);}
+
+function resetForm(){
+  ['firstName','lastName','mobile','email','age','currentCity','birthCountry','passportCountry','height','waist','shoe','hair','eyes','instagram','portfolio',
+   'motherAgent','motherAgentCountry','agMilan','agNY','agLA','agGER','agESP','agSCAN','attendance'].forEach(i=>$(i).value='');
+  $('mobileCode').value='+90';
+  $('gender').value='';
+  $('birthCountry').value='';
+  $('passportCountry').value='';
+  populateHeights();
+  populateWaist();
+  photos={selfie:null,uploads:[]};
+  renderPreviews();
+  $('confirmWrap').classList.add('hidden');
+  $('formWrap').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+/* =========================================================
+   ADMIN
+   ========================================================= */
+async function loadEntries(){
+  const out=[];
+  let offset='';
+  do{
+    const res=await fetch(API+'?pageSize=100'+(offset?('&offset='+encodeURIComponent(offset)):''),{headers:HDRS});
+    if(!res.ok) throw new Error('list '+res.status);
+    const data=await res.json();
+    (data.records||[]).forEach(r=>{
+      const f=r.fields||{};
+      out.push({
+        id:r.id,
+        ts:new Date(r.createdTime).getTime(),
+        first:f['First Name']||'', last:f['Last Name']||'',
+        attendance:f['Attendance']||'',
+        excluded:!!f['Exclude from Count'],
+        archived:!!f['Archived'],
+        gender:f['Gender']||'', age:f['Age']||'',
+        mobile:f['Mobile']||'', email:f['Email']||'',
+        currentCity:f['Current City']||'',
+        birthCountry:f['Birth Country']||'', passportCountry:f['Passport Country']||'',
+        height:f['Height (cm)']?(f['Height (cm)']+' cm'):'',
+        waist:f['Waist']||'', shoe:f['Shoe']||'',
+        hair:f['Hair']||'', eyes:f['Eyes']||'',
+        instagram:f['Instagram']||'',
+        portfolio:f['Portfolio Link']||'',
+        seenBy:f['Seen By']||[],
+        qn:f['Queue Number']||null,
+        decisions:{Katie:f['Katie Decision']||'',Ana:f['Ana Decision']||'',Wilbur:f['Wilbur Decision']||'',
+          NY:f['NY Decision']||'',Germany:f['Germany Decision']||'',Scandi:f['Scandi Decision']||''},
+        motherAgent:f['Mother Agent']||'', motherAgentCountry:f['Mother Agent Country']||'',
+        agMilan:f['Milan Agency']||'', agNY:f['NY Agency']||'', agLA:f['LA Agency']||'',
+        agGER:f['German Agency']||'', agESP:f['Spain Agency']||'', agSCAN:f['Scandinavia Agency']||'',
+        selfie:(f['Selfie']&&f['Selfie'][0])?(f['Selfie'][0].thumbnails&&f['Selfie'][0].thumbnails.large?f['Selfie'][0].thumbnails.large.url:f['Selfie'][0].url):null,
+        uploads:(f['Additional Photos']||[]).map(a=>a.url)
+      });
+    });
+    offset=data.offset||'';
+  }while(offset);
+  out.sort((a,b)=>a.ts-b.ts);
+  out.forEach(e=>{ e.num=(e.attendance==='Remote submission')?null:(e.qn||null); });
+  out.sort((a,b)=>{
+    if(a.num&&b.num) return a.num-b.num;
+    if(a.num&&!b.num) return -1;
+    if(!a.num&&b.num) return 1;
+    return a.ts-b.ts;
+  });
+  return out;
+}
+
+function goAdmin(){
+  const code=prompt('Staff passcode:');
+  if(code!=='two'){ if(code!==null) alert('Incorrect passcode.'); return; }
+  document.getElementById('signinView').classList.add('hidden');
+  document.getElementById('adminView').classList.remove('hidden');
+  refreshAdmin();
+}
+function exitAdmin(){
+  document.getElementById('adminView').classList.add('hidden');
+  document.getElementById('signinView').classList.remove('hidden');
+}
+
+let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num', GEN_FILTER='', DECIDER_VIEW='', SHOW_ARCH=false;
+function setAttFilter(btn){
+  ATT_FILTER=btn.getAttribute('data-att');
+  btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  if(CACHE.length) renderList(true); else refreshAdmin();
+}
+function setGenFilter(btn){
+  GEN_FILTER=btn.getAttribute('data-gen');
+  btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  if(CACHE.length) renderList(true); else refreshAdmin();
+}
+function toggleUnseen(){
+  UNSEEN_ONLY=!UNSEEN_ONLY;
+  $('unseenBtn').textContent=UNSEEN_ONLY?'Show all':'Unseen only';
+  if(CACHE.length) renderList(true); else refreshAdmin();
+}
+function toggleArchived(){
+  SHOW_ARCH=!SHOW_ARCH;
+  const b=$('archBtn');
+  b.textContent=SHOW_ARCH?'Back to active':'Archived';
+  b.classList.toggle('active-arch', SHOW_ARCH);
+  if(CACHE.length) renderList(true); else refreshAdmin();
+}
+function setDeciderView(btn){
+  DECIDER_VIEW=btn.getAttribute('data-decider');
+  btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  if(CACHE.length) renderList(true); else refreshAdmin();
+}
+function syncDecChips(){
+  document.querySelectorAll('[data-dec]').forEach(c=>c.classList.toggle('active', c.getAttribute('data-dec')===DEC_FILTER));
+}
+function setDecFilter(btn){
+  DEC_FILTER=btn.getAttribute('data-dec');
+  btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  if(CACHE.length) renderList(true); else refreshAdmin();
+}
+function effectiveSeen(e){
+  const s=new Set(e.seenBy||[]);
+  if(e.decisions){ AGENTS.forEach(a=>{ if(e.decisions[a]) s.add(a); }); }
+  return [...s];
+}
+function passesFilters(e){
+  if(!SHOW_ARCH && e.archived) return false;
+  if(SHOW_ARCH && !e.archived) return false;
+  if(GEN_FILTER && e.gender!==GEN_FILTER) return false;
+  if(ATT_FILTER && e.attendance!==ATT_FILTER) return false;
+  if(UNSEEN_ONLY && effectiveSeen(e).length) return false;
+  if(DECIDER_VIEW){
+    const d=(e.decisions&&e.decisions[DECIDER_VIEW])||'';
+    if(DEC_FILTER){
+      if(DEC_FILTER==='__NONE__'){ if(d) return false; }     // agent has NOT decided
+      else if(d!==DEC_FILTER) return false;
+    }
+  } else if(DEC_FILTER){
+    if(DEC_FILTER==='__NONE__'){
+      if(e.decisions && ALL_DECIDERS.some(a=>e.decisions[a])) return false;  // someone decided → exclude
+    } else if(!(e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]===DEC_FILTER))) return false;
+  }
+  if(SEARCH_Q){
+    const name=(e.first+' '+e.last).toLowerCase();
+    const ig=(e.instagram||'').toLowerCase();
+    const numQ=SEARCH_Q.replace('#','');
+    if(!(name.includes(SEARCH_Q)||ig.includes(SEARCH_Q)||String(e.num)===numQ)) return false;
+  }
+  return true;
+}
+async function refreshAdmin(quiet){
+  if(REFRESHING) return; REFRESHING=true;
+  const list=$('adminList');
+  if(!quiet) list.innerHTML='<div class="loading">Loading…</div>';
+  try{ CACHE=await loadEntries(); }catch(e){ REFRESHING=false; return; }
+  renderList(quiet);
+  REFRESHING=false;
+}
+function heightCm(e){ const m=(e.height||'').match(/(\d+)\s*cm/); return m?parseInt(m[1],10):-1; }
+function sortEntries(arr){
+  const a=arr.slice();
+  if(SORT_BY==='az') a.sort((x,y)=>(x.first+' '+x.last).toLowerCase().localeCompare((y.first+' '+y.last).toLowerCase()));
+  else if(SORT_BY==='za') a.sort((x,y)=>(y.first+' '+y.last).toLowerCase().localeCompare((x.first+' '+x.last).toLowerCase()));
+  else if(SORT_BY==='height') a.sort((x,y)=>heightCm(y)-heightCm(x));
+  else if(SORT_BY==='heightAsc') a.sort((x,y)=>{ const hx=heightCm(x),hy=heightCm(y); if(hx<0)return 1; if(hy<0)return -1; return hx-hy; });
+  else if(SORT_BY==='age') a.sort((x,y)=>((y.age||0)-(x.age||0)));
+  else if(SORT_BY==='ageAsc') a.sort((x,y)=>((x.age||0)-(y.age||0)));
+  else if(SORT_BY==='numDesc') a.sort((x,y)=>{ /* number high→low; remote (null) last */
+    if(x.num&&y.num) return y.num-x.num;
+    if(x.num&&!y.num) return -1;
+    if(!x.num&&y.num) return 1;
+    return x.ts-y.ts;
+  });
+  else a.sort((x,y)=>{ /* number: numbered first asc, remote (null) last by time */
+    if(x.num&&y.num) return x.num-y.num;
+    if(x.num&&!y.num) return -1;
+    if(!x.num&&y.num) return 1;
+    return x.ts-y.ts;
+  });
+  return a;
+}
+/* renders from CACHE — search/filters cost zero network */
+function renderList(quiet){
+  const list=$('adminList');
+  const entries=CACHE;
+  const sy=window.scrollY;
+  const inPerson=entries.filter(e=>e.attendance&&e.attendance!=='Remote submission'&&!e.excluded&&!e.archived);
+  const remote=entries.filter(e=>e.attendance==='Remote submission'&&!e.excluded&&!e.archived).length;
+  const excl=entries.filter(e=>e.excluded&&!e.archived).length;
+  const arch=entries.filter(e=>e.archived).length;
+  const unseen=inPerson.filter(e=>!effectiveSeen(e).length).length;
+  const sign=entries.filter(e=>!e.excluded&&!e.archived&&e.decisions&&ALL_DECIDERS.some(a=>e.decisions[a]==='Sign')).length;
+  let shown=entries.filter(passesFilters);
+  shown=sortEntries(shown);
+  const totalPool=entries.filter(e=>SHOW_ARCH?e.archived:!e.archived).length;
+  const filterActive=!!(GEN_FILTER||ATT_FILTER||UNSEEN_ONLY||DEC_FILTER||DECIDER_VIEW||SEARCH_Q);
+  const matchTxt=filterActive?('Showing '+shown.length+' of '+totalPool+(DECIDER_VIEW?(' · '+DECIDER_VIEW):'')+' — '):'';
+  $('adminCount').textContent=matchTxt+(SHOW_ARCH?('Viewing '+arch+' archived'):(inPerson.length+' in-person · '+remote+' remote · '+unseen+' unseen · '+sign+' sign'+(excl?' · '+excl+' excluded':'')+(arch?' · '+arch+' archived':'')));
+  if(!entries.length){ list.innerHTML='<div class="empty">No sign-ins yet.<br>Entries appear here as models complete the form.</div>'; return; }
+  list.innerHTML='';
+  shown.forEach(e=>list.appendChild(adminCard(e,e.num)));
+  if(!list.children.length){ list.innerHTML='<div class="empty">No one matches this filter.</div>'; }
+  if(quiet) window.scrollTo(0,sy);
+}
+/* auto-refresh every 5s while staff view open, screen on, viewer closed */
+setInterval(()=>{
+  const adminVisible=!document.getElementById('adminView').classList.contains('hidden');
+  if(adminVisible && !document.hidden && !VIEWER_OPEN) refreshAdmin(true);
+},5000);
+
+function agencyLine(e){
+  const parts=[];
+  if(e.agMilan)parts.push('Milan: '+e.agMilan);
+  if(e.agNY)parts.push('NY: '+e.agNY);
+  if(e.agLA)parts.push('LA: '+e.agLA);
+  if(e.agGER)parts.push('GER: '+e.agGER);
+  if(e.agESP)parts.push('ESP: '+e.agESP);
+  if(e.agSCAN)parts.push('Scandinavia: '+e.agSCAN);
+  return parts.join(' · ');
+}
+
+function adminCard(e,n){
+  const card=document.createElement('div');card.className='card'+(e.excluded?' excluded':'');
+  const ph=document.createElement('div');ph.className='cphoto';
+  if(e.selfie){const im=document.createElement('img');im.src=e.selfie;ph.appendChild(im);}
+  ph.style.cursor='pointer';
+  ph.onclick=()=>openViewer(e);
+  card.appendChild(ph);
+  const info=document.createElement('div');info.className='cinfo';
+  const stats=[];
+  if(e.gender)stats.push(e.gender);
+  if(e.age)stats.push('Age '+e.age);
+  if(e.birthCountry)stats.push('Born '+e.birthCountry);
+  if(e.passportCountry)stats.push('Passport '+e.passportCountry);
+  if(e.height)stats.push(e.height);
+  if(e.waist)stats.push('W '+e.waist);
+  if(e.shoe)stats.push('Shoe '+e.shoe);
+  if(e.hair)stats.push(e.hair);
+  if(e.eyes)stats.push(e.eyes+' eyes');
+  info.innerHTML='<div class="cname">'+(n?'<b>#'+n+'</b> &nbsp;':'')+esc(e.first)+' '+esc(e.last)+(e.attendance?' <span class="att-tag att-'+(e.attendance.indexOf('Remote')>=0?'rem':'fri')+'">'+esc(e.attendance.replace('Istanbul casting','IN PERSON').replace('Remote submission','REMOTE'))+'</span>':'')+'</div>'+
+    '<div class="cmeta">'+esc(stats.join(' · '))+
+    (e.instagram?'<br><b>IG</b> '+esc(e.instagram):'')+
+    (e.portfolio?'<br><b>Book</b> <a href="'+esc(e.portfolio)+'" target="_blank" style="color:#000">'+esc(e.portfolio.replace(/^https?:\/\//,''))+'</a>':'')+
+    (e.mobile?'<br><b>Mob</b> '+esc(e.mobile):'')+
+    (e.email?'<br><b>Email</b> '+esc(e.email):'')+
+    (e.currentCity?'<br><b>City</b> '+esc(e.currentCity):'')+
+    (e.motherAgent?'<br><b>Mother</b> '+esc(e.motherAgent)+(e.motherAgentCountry?' ('+esc(e.motherAgentCountry)+')':''):'')+
+    (agencyLine(e)?'<br>'+esc(agencyLine(e)):'')+
+    (e.uploads&&e.uploads.length?'<br><b>'+e.uploads.length+'</b> extra photo'+(e.uploads.length>1?'s':''):'')+
+    '</div>';
+  /* decision groups: At Casting (marks seen) + Remote Markets */
+  function buildDeciderCol(name, marksSeen){
+    const col=document.createElement('div');col.className='dec-col';
+    const h=document.createElement('div');h.className='dec-head';h.textContent=DECIDER_LABEL[name]||name;
+    col.appendChild(h);
+    const opts=DECIDER_OPTS[name]||[['Sign','sign'],['Unsure','unsure'],['Pass','pass']];
+    opts.forEach(([val,cls])=>{
+      const b=document.createElement('button');
+      const cur=(e.decisions&&e.decisions[name])||'';
+      b.className='dec-btn '+cls+(cur===val?' on':'');
+      b.textContent=val;
+      b.onclick=async()=>{
+        b.disabled=true;
+        const now=(e.decisions&&e.decisions[name])||'';
+        const next=now===val?null:val;
+        const fields={[DECIDER_FIELD[name]]:next};
+        let seenNow=e.seenBy||[];
+        if(marksSeen){
+          seenNow=(e.seenBy||[]).includes(name)?(e.seenBy||[]):(e.seenBy||[]).concat([name]);
+          fields['Seen By']=next?seenNow:(e.seenBy||[]);
+        }
+        try{
+          const res=await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,
+            body:JSON.stringify({fields:fields,typecast:true})});
+          if(res.ok){ e.decisions[name]=next||''; if(marksSeen&&next) e.seenBy=seenNow; }
+        }catch(err){}
+        refreshAdmin(true);
+      };
+      col.appendChild(b);
+    });
+    return col;
+  }
+  const gA=document.createElement('div');gA.className='dec-group-label';gA.textContent='At Casting';
+  info.appendChild(gA);
+  const cols=document.createElement('div');cols.className='dec-cols';
+  AGENTS.forEach(a=>cols.appendChild(buildDeciderCol(a,true)));
+  info.appendChild(cols);
+  const gR=document.createElement('div');gR.className='dec-group-label';gR.textContent='Remote Markets';
+  info.appendChild(gR);
+  const cols2=document.createElement('div');cols2.className='dec-cols';
+  REMOTE_DECIDERS.forEach(a=>cols2.appendChild(buildDeciderCol(a,false)));
+  info.appendChild(cols2);
+  /* exclude-from-count toggle */
+  const exRow=document.createElement('div');exRow.className='ex-row';
+  const ex=document.createElement('button');
+  ex.className='ex-btn'+(e.excluded?' on':'');
+  ex.textContent=e.excluded?'✓ Excluded from count':'Exclude from count (test)';
+  ex.onclick=async()=>{
+    ex.disabled=true;
+    const next=!e.excluded;
+    try{
+      const res=await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,
+        body:JSON.stringify({fields:{'Exclude from Count':next},typecast:true})});
+      if(res.ok){ e.excluded=next; }
+    }catch(err){}
+    refreshAdmin(true);
+  };
+  exRow.appendChild(ex);
+  info.appendChild(exRow);
+  const del=document.createElement('button');del.className='cdel';
+  del.textContent=e.archived?'Un-archive':'Archive';
+  del.onclick=async()=>{
+    const newVal=!e.archived;
+    if(newVal && !confirm('Archive '+e.first+' '+e.last+'? They will be hidden from the list but recoverable.')) return;
+    await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,body:JSON.stringify({fields:{'Archived':newVal}})});
+    e.archived=newVal;
+    if(VIEWER_OPEN){const v=document.querySelector('.viewer'); if(v){v.remove();VIEWER_OPEN=false;}}
+    refreshAdmin();
+  };
+  info.appendChild(del);
+  card.appendChild(info);
+  return card;
+}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* full-screen photo viewer: selfie + digitals */
+function openViewer(e){
+  VIEWER_OPEN=true;
+  const v=document.createElement('div');v.className='viewer';v.id='photoViewer';
+  const close=document.createElement('button');close.className='vclose';close.textContent='×';
+  close.onclick=()=>{ v.remove(); VIEWER_OPEN=false; };
+  v.appendChild(close);
+  const nm=document.createElement('div');nm.className='vname';
+  nm.textContent='#'+e.num+' — '+e.first+' '+e.last;
+  v.appendChild(nm);
+  const imgs=[];
+  if(e.selfie) imgs.push(e.selfie);
+  (e.uploads||[]).forEach(u=>imgs.push(u));
+  imgs.forEach(src=>{ const im=document.createElement('img'); im.src=src; v.appendChild(im); });
+  v.onclick=(ev)=>{ if(ev.target===v){ v.remove(); VIEWER_OPEN=false; } };
+  document.body.appendChild(v);
+}
+
+/* =========================================================
+   PDF EXPORT  — opens print-ready window, user prints to PDF
+   ========================================================= */
+function decLine(e){
+  const parts=[];
+  if(e.decisions){ ALL_DECIDERS.forEach(a=>{ if(e.decisions[a]) parts.push(a+': '+e.decisions[a]); }); }
+  return parts.join(' · ');
+}
+async function exportPDF(todayOnly){
+  let entries=await loadEntries();
+  entries=entries.filter(e=>passesFilters(e) && !e.excluded && !e.archived);
+  if(todayOnly) entries=entries.filter(e=>isToday(e.ts));
+  if(!entries.length){ alert('Nothing to export for this selection.'); return; }
+  const w=window.open('','_blank');
+  if(!w){ alert('Allow pop-ups to export the PDF.'); return; }
+
+  let cards='';
+  entries.forEach((e,i)=>{
+    const dayLabel=new Date(e.ts).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    const stats=[];
+    if(e.gender)stats.push(e.gender);
+    if(e.age)stats.push('Age '+e.age);
+    if(e.birthCountry)stats.push('Born '+e.birthCountry);
+    if(e.passportCountry)stats.push('Passport '+e.passportCountry);
+    if(e.height)stats.push(e.height);
+    if(e.waist)stats.push('Waist '+e.waist);
+    if(e.shoe)stats.push('Shoe '+e.shoe);
+    if(e.hair)stats.push('Hair '+e.hair);
+    if(e.eyes)stats.push('Eyes '+e.eyes);
+    const ag=agencyLine(e);
+    cards+=`
+      <div class="pcard">
+        <div class="pphoto">${e.selfie?`<img src="${e.selfie}">`:''}</div>
+        <div class="pinfo">
+          <div class="pname">${e.num?'#'+e.num+' — ':''}${esc(e.first)} ${esc(e.last)}${e.attendance?` <span style="font-size:10px;font-weight:700">[${esc(e.attendance.replace('Istanbul casting','IN PERSON').replace('Remote submission','REMOTE'))}]</span>`:''} <span style="font-size:10px;color:#777">(${dayLabel})</span>${decLine(e)?` <span style="font-weight:700">[${esc(decLine(e))}]</span>`:''}</div>
+          <div class="pstats">${esc(stats.join('  ·  '))}</div>
+          ${e.instagram?`<div class="prow"><span>IG</span> ${esc(e.instagram)}</div>`:''}
+          ${e.portfolio?`<div class="prow"><span>Book</span> ${esc(e.portfolio.replace(/^https?:\/\//,''))}</div>`:''}
+          ${(e.seenBy&&e.seenBy.length)?`<div class="prow"><span>Seen by</span> ${esc(e.seenBy.join(', '))}</div>`:''}
+          ${(e.mobile||e.email)?`<div class="prow"><span>Contact</span> ${esc([e.mobile,e.email].filter(Boolean).join('  ·  '))}</div>`:''}
+          ${e.currentCity?`<div class="prow"><span>Current City</span> ${esc(e.currentCity)}</div>`:''}
+          ${e.motherAgent?`<div class="prow"><span>Mother Agent</span> ${esc(e.motherAgent)}${e.motherAgentCountry?' ('+esc(e.motherAgentCountry)+')':''}</div>`:''}
+          ${ag?`<div class="prow"><span>Agencies</span> ${esc(ag)}</div>`:''}
+        </div>
+      </div>`;
+  });
+
+  const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Two Management — Open Call Istanbul</title>
+  <style>
+    @page{margin:14mm;}
+    *{box-sizing:border-box;}
+    body{font-family:Helvetica,Arial,sans-serif;color:#111;margin:0;}
+    .head{text-align:center;border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:16px;}
+    .head .a{font-size:10px;letter-spacing:.4em;text-transform:uppercase;font-weight:700;}
+    .head .t{font-family:Georgia,serif;font-size:26px;margin-top:6px;}
+    .head .s{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:#666;margin-top:6px;}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .pcard{border:1px solid #bbb;display:flex;gap:10px;padding:8px;page-break-inside:avoid;}
+    .pphoto{width:74px;height:98px;flex-shrink:0;background:#eee;border:1px solid #ccc;overflow:hidden;}
+    .pphoto img{width:100%;height:100%;object-fit:cover;}
+    .pinfo{flex:1;min-width:0;}
+    .pname{font-family:Georgia,serif;font-size:15px;}
+    .pstats{font-size:10px;color:#333;margin-top:4px;line-height:1.4;}
+    .prow{font-size:10px;margin-top:3px;line-height:1.35;}
+    .prow span{font-weight:700;text-transform:uppercase;font-size:8px;letter-spacing:.08em;color:#000;}
+    .foot{margin-top:14px;font-size:9px;color:#888;text-align:center;letter-spacing:.1em;text-transform:uppercase;}
+  </style></head><body>
+    <div class="head">
+      <div class="a">Two Management</div>
+      <div class="t">Open Call — Istanbul</div>
+      <div class="s">Men's · June 2026 · ${entries.length} talent · ${today}</div>
+    </div>
+    <div class="grid">${cards}</div>
+    <div class="foot">Two Management — Confidential Call Sheet</div>
+    <script>window.onload=function(){
+      var imgs=[].slice.call(document.images);
+      Promise.all(imgs.map(function(im){return im.complete?Promise.resolve():new Promise(function(r){im.onload=r;im.onerror=r;});}))
+        .then(function(){setTimeout(function(){window.print();},200);});
+    }<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+/* init */
+renderPreviews();
+
+/* ---- country codes + phone/email validation ----
+   [dial code, ISO, min national digits, max national digits] */
+const COUNTRY_CODES=[
+  ['+39','IT',9,11],['+1','US',10,10],['+44','UK',10,10],['+33','FR',9,9],['+49','DE',10,11],['+34','ES',9,9],
+  ['+31','NL',9,9],['+32','BE',8,9],['+41','CH',9,9],['+43','AT',10,11],['+351','PT',9,9],['+30','GR',10,10],
+  ['+46','SE',7,9],['+47','NO',8,8],['+45','DK',8,8],['+358','FI',9,10],['+353','IE',9,9],['+48','PL',9,9],
+  ['+420','CZ',9,9],['+36','HU',9,9],['+40','RO',9,9],['+7','RU',10,10],['+380','UA',9,9],['+90','TR',10,10],
+  ['+61','AU',9,9],['+64','NZ',8,10],['+81','JP',10,10],['+82','KR',9,10],['+86','CN',11,11],['+852','HK',8,8],
+  ['+65','SG',8,8],['+66','TH',9,9],['+62','ID',9,11],['+63','PH',10,10],['+91','IN',10,10],['+971','AE',9,9],
+  ['+972','IL',9,9],['+966','SA',9,9],['+20','EG',10,10],['+27','ZA',9,9],['+234','NG',8,11],['+254','KE',9,9],
+  ['+55','BR',10,11],['+54','AR',10,11],['+56','CL',9,9],['+57','CO',10,10],['+52','MX',10,10],['+51','PE',9,9]
+];
+const CODE_RANGE={};
+COUNTRY_CODES.forEach(([code,iso,mn,mx])=>{ CODE_RANGE[code]={iso,mn,mx}; });
+(function fillCodes(){
+  const sel=$('mobileCode');
+  COUNTRY_CODES.forEach(([code,iso])=>{
+    const o=document.createElement('option');
+    o.value=code; o.textContent=iso+' '+code;
+    sel.appendChild(o);
+  });
+  sel.value='+90'; // Istanbul default
+})();
+function phoneHint(){
+  const r=CODE_RANGE[$('mobileCode').value];
+  if(!r) return '';
+  return r.mn===r.mx ? (r.mn+' digits') : (r.mn+'\u2013'+r.mx+' digits');
+}
+function updatePhonePlaceholder(){
+  $('mobile').placeholder=phoneHint();
+}
+/* strip non-digits live, cap at the country's max */
+function filterPhone(){
+  const r=CODE_RANGE[$('mobileCode').value];
+  let v=$('mobile').value.replace(/[^0-9]/g,'');
+  if(r && v.length>r.mx) v=v.slice(0,r.mx);
+  $('mobile').value=v;
+}
+$('mobile').addEventListener('input',filterPhone);
+$('mobileCode').addEventListener('change',()=>{ updatePhonePlaceholder(); filterPhone(); });
+updatePhonePlaceholder();
+function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+/* ---- country dropdowns ---- */
+const COUNTRIES=["Afghanistan","Albania","Algeria","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Bolivia","Bosnia and Herzegovina","Brazil","Bulgaria","Cambodia","Cameroon","Canada","Chile","China","Colombia","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Dominican Republic","Ecuador","Egypt","El Salvador","Estonia","Ethiopia","Finland","France","Georgia","Germany","Ghana","Greece","Guatemala","Hong Kong","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Ivory Coast","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kuwait","Latvia","Lebanon","Lithuania","Luxembourg","Malaysia","Malta","Mexico","Moldova","Monaco","Montenegro","Morocco","Netherlands","New Zealand","Nigeria","North Macedonia","Norway","Pakistan","Panama","Paraguay","Peru","Philippines","Poland","Portugal","Puerto Rico","Qatar","Romania","Russia","Saudi Arabia","Senegal","Serbia","Singapore","Slovakia","Slovenia","South Africa","South Korea","Spain","Sri Lanka","Sweden","Switzerland","Taiwan","Thailand","Trinidad and Tobago","Tunisia","Turkey","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Venezuela","Vietnam"];
+(function fillCountries(){
+  ['birthCountry','passportCountry','motherAgentCountry'].forEach(id=>{
+    const sel=$(id);
+    COUNTRIES.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+  });
+})();
+
+/* ---- age dropdown 18–40 ---- */
+(function fillAge(){
+  const sel=$('age');
+  for(let a=18;a<=40;a++){ const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); }
+})();
+
+/* ---- hair & eye color dropdowns ---- */
+const HAIR_COLORS=["Black","Dark Brown","Brown","Light Brown","Dark Blonde","Blonde","Light Blonde","Auburn","Red","Grey","White","Bald","Other"];
+const EYE_COLORS=["Brown","Dark Brown","Hazel","Green","Blue","Light Blue","Grey","Amber","Black","Other"];
+(function fillColors(){
+  const h=$('hair'); HAIR_COLORS.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; h.appendChild(o); });
+  const e=$('eyes'); EYE_COLORS.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; e.appendChild(o); });
+})();
+
+/* ---- gender-filtered height ---- */
+/* Female 5'7"–6'0", Male 5'10"–6'5", 0.5" steps, shows cm + US ft/in */
+function buildHeights(minIn,maxIn){
+  const opts=[];
+  for(let t=minIn*2; t<=maxIn*2; t++){       // half-inch steps
+    const inches=t/2;
+    const ft=Math.floor(inches/12);
+    const rem=inches-ft*12;
+    const remLabel=(rem%1===0)?rem:(Math.floor(rem)+'.5');
+    const cm=Math.round(inches*2.54);
+    const label=cm+' cm ('+ft+"'"+remLabel+'")';
+    opts.push({label:label, value:label});
+  }
+  return opts;
+}
+const HEIGHTS={
+  Female: buildHeights(67,72),  // 5'7" to 6'0"
+  Male:   buildHeights(70,77)   // 5'10" to 6'5"
+};
+function populateHeights(){
+  const g=$('gender').value;
+  const h=$('height');
+  h.innerHTML='';
+  if(!g){ h.innerHTML='<option value="">Select gender first</option>'; return; }
+  h.innerHTML='<option value="">Select…</option>';
+  HEIGHTS[g].forEach(o=>{ const el=document.createElement('option'); el.value=o.value; el.textContent=o.label; h.appendChild(el); });
+}
+
+/* ---- shoe: US 7–15 half sizes, shown as EU (US) ---- */
+/* US men's -> EU approx mapping */
+function usToEU(us){
+  // EU ≈ US + 33 for men's whole/half sizes (close enough for casting)
+  return Math.round((us + 33) * 2) / 2;
+}
+(function fillShoe(){
+  const sel=$('shoe');
+  for(let us=7; us<=15; us+=0.5){
+    const eu=usToEU(us);
+    const label='EU '+eu+' (US '+us+')';
+    const o=document.createElement('option'); o.value=label; o.textContent=label; sel.appendChild(o);
+  }
+})();
+
+/* ---- waist: gender-filtered dropdown ----
+   Men 28–38 in, Women 22–32 in, shows in (cm) */
+function buildWaist(minIn,maxIn){
+  const opts=[];
+  for(let inch=minIn; inch<=maxIn; inch++){
+    const cm=Math.round(inch*2.54);
+    const label=inch+'" ('+cm+' cm)';
+    opts.push(label);
+  }
+  return opts;
+}
+const WAIST={ Male: buildWaist(28,38), Female: buildWaist(22,32) };
+function populateWaist(){
+  const g=$('gender').value;
+  const w=$('waist');
+  w.innerHTML='';
+  if(!g){ w.innerHTML='<option value="">Select gender first</option>'; return; }
+  w.innerHTML='<option value="">Select…</option>';
+  WAIST[g].forEach(v=>{ const el=document.createElement('option'); el.value=v; el.textContent=v; w.appendChild(el); });
+}
+
+$('gender').addEventListener('change',()=>{ populateHeights(); populateWaist(); });
+
+
+/* ---- date + live counter ---- */
+function setTodayDate(){
+  const d=new Date();
+  $('todayDate').textContent=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+}
+function isToday(ts){
+  const d=new Date(ts), n=new Date();
+  return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();
+}
+async function updateLiveCount(){
+  try{
+    const entries=await lightEntries();
+    const today=entries.filter(e=>isToday(e.ts)).length;
+    $('liveCount').textContent=today;
+  }catch(e){ $('liveCount').textContent='—'; }
+}
+setTodayDate();
+updateLiveCount();  /* once on load; refreshed after each sign-in — no polling, protects API limits */
+</script>
+</body>
+</html>
