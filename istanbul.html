@@ -1128,6 +1128,7 @@ async function exportPDF(todayOnly){
           ${e.currentCity?`<div class="prow"><span>Current City</span> ${esc(e.currentCity)}</div>`:''}
           ${e.motherAgent?`<div class="prow"><span>Mother Agent</span> ${esc(e.motherAgent)}${e.motherAgentCountry?' ('+esc(e.motherAgentCountry)+')':''}</div>`:''}
           ${ag?`<div class="prow"><span>Agencies</span> ${esc(ag)}</div>`:''}
+          ${e.notes?`<div class="prow pnote"><span>Notes</span> ${esc(e.notes)}</div>`:''}
         </div>
       </div>`;
   });
@@ -1150,6 +1151,7 @@ async function exportPDF(todayOnly){
     .pname{font-family:Georgia,serif;font-size:15px;}
     .pstats{font-size:10px;color:#333;margin-top:4px;line-height:1.4;}
     .prow{font-size:10px;margin-top:3px;line-height:1.35;}
+    .pnote{margin-top:5px;padding:4px 6px;background:#f4f4f4;border-left:2px solid #333;white-space:pre-wrap;}
     .prow span{font-weight:700;text-transform:uppercase;font-size:8px;letter-spacing:.08em;color:#000;}
     .foot{margin-top:14px;font-size:9px;color:#888;text-align:center;letter-spacing:.1em;text-transform:uppercase;}
   </style></head><body>
