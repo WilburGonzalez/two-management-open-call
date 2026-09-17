@@ -136,6 +136,7 @@
   #sortSel{border:1px solid #000;padding:8px 10px;font-size:13px;background:#fff;color:#000;}
   .att-tag{font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:3px;vertical-align:middle;}
   .att-fri{background:#0a7d33;color:#fff;}
+  .att-sat{background:#1558b0;color:#fff;}
   .att-sat{background:#1156b8;color:#fff;}
   .att-rem{background:#888;color:#fff;}
   .ex-row{margin:8px 0 2px;}
@@ -194,7 +195,8 @@
     <label>Will you attend the Istanbul casting in person?</label>
     <select id="attendance">
       <option value="">Select…</option>
-      <option value="Istanbul casting">Yes — in person</option>
+      <option value="Istanbul casting">Yes — Day 1</option>
+      <option value="Istanbul Day 2">Yes — Day 2</option>
       <option value="Remote submission">No — remote submission only</option>
     </select>
 
@@ -365,7 +367,8 @@
   <div class="filter-bar">
     <span class="filter-label">Attending:</span>
     <button class="chip active" data-att="" onclick="setAttFilter(this)">All</button>
-    <button class="chip" data-att="Istanbul casting" onclick="setAttFilter(this)">In person</button>
+    <button class="chip" data-att="Istanbul casting" onclick="setAttFilter(this)">Day 1</button>
+    <button class="chip" data-att="Istanbul Day 2" onclick="setAttFilter(this)">Day 2</button>
     <button class="chip" data-att="Remote submission" onclick="setAttFilter(this)">Remote</button>
   </div>
   <div class="filter-bar">
@@ -927,7 +930,7 @@ function adminCard(e,n){
   if(e.shoe)stats.push('Shoe '+e.shoe);
   if(e.hair)stats.push(e.hair);
   if(e.eyes)stats.push(e.eyes+' eyes');
-  info.innerHTML='<div class="cname">'+(n?'<b>#'+n+'</b> &nbsp;':'')+esc(e.first)+' '+esc(e.last)+(e.attendance?' <span class="att-tag att-'+(e.attendance.indexOf('Remote')>=0?'rem':'fri')+'">'+esc(e.attendance.replace('Istanbul casting','IN PERSON').replace('Remote submission','REMOTE'))+'</span>':'')+'</div>'+
+  info.innerHTML='<div class="cname">'+(n?'<b>#'+n+'</b> &nbsp;':'')+esc(e.first)+' '+esc(e.last)+(e.attendance?' <span class="att-tag att-'+(e.attendance.indexOf('Remote')>=0?'rem':e.attendance.indexOf('Day 2')>=0?'sat':'fri')+'">'+esc(e.attendance.replace('Istanbul casting','DAY 1').replace('Istanbul Day 2','DAY 2').replace('Remote submission','REMOTE'))+'</span>':'')+'</div>'+
     '<div class="cmeta">'+esc(stats.join(' · '))+
     (e.instagram?'<br><b>IG</b> '+esc(e.instagram):'')+
     (e.portfolio?'<br><b>Book</b> <a href="'+esc(e.portfolio)+'" target="_blank" style="color:#000">'+esc(e.portfolio.replace(/^https?:\/\//,''))+'</a>':'')+
@@ -1065,7 +1068,7 @@ async function exportPDF(todayOnly){
       <div class="pcard">
         <div class="pphoto">${e.selfie?`<img src="${e.selfie}">`:''}</div>
         <div class="pinfo">
-          <div class="pname">${e.num?'#'+e.num+' — ':''}${esc(e.first)} ${esc(e.last)}${e.attendance?` <span style="font-size:10px;font-weight:700">[${esc(e.attendance.replace('Istanbul casting','IN PERSON').replace('Remote submission','REMOTE'))}]</span>`:''} <span style="font-size:10px;color:#777">(${dayLabel})</span>${decLine(e)?` <span style="font-weight:700">[${esc(decLine(e))}]</span>`:''}</div>
+          <div class="pname">${e.num?'#'+e.num+' — ':''}${esc(e.first)} ${esc(e.last)}${e.attendance?` <span style="font-size:10px;font-weight:700">[${esc(e.attendance.replace('Istanbul casting','DAY 1').replace('Istanbul Day 2','DAY 2').replace('Remote submission','REMOTE'))}]</span>`:''} <span style="font-size:10px;color:#777">(${dayLabel})</span>${decLine(e)?` <span style="font-weight:700">[${esc(decLine(e))}]</span>`:''}</div>
           <div class="pstats">${esc(stats.join('  ·  '))}</div>
           ${e.instagram?`<div class="prow"><span>IG</span> ${esc(e.instagram)}</div>`:''}
           ${e.portfolio?`<div class="prow"><span>Book</span> ${esc(e.portfolio.replace(/^https?:\/\//,''))}</div>`:''}
