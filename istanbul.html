@@ -133,6 +133,8 @@
   .note-box{width:100%;min-height:120px;resize:vertical;padding:12px;font-size:15px;
     line-height:1.4;border:1.5px solid var(--line);border-radius:8px;font-family:inherit;box-sizing:border-box;}
   .note-box:focus{outline:none;border-color:var(--ink);}
+  .note-save{margin-top:8px;font-size:13px;font-weight:600;background:#111;color:#fff;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;}
+  .note-save:disabled{opacity:.6;}
   .seen-row{display:flex;gap:8px;margin:10px 0;}
   .seen-btn{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
     border:1px solid #000;background:#fff;color:#000;padding:8px 14px;cursor:pointer;}
@@ -789,7 +791,7 @@ function exitAdmin(){
 }
 try{ if(localStorage.getItem('istanbulStaff')==='1'){ if(document.readyState==='loading'){ window.addEventListener('DOMContentLoaded',openAdminNoPrompt); } else { openAdminNoPrompt(); } } }catch(e){}
 
-let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num', GEN_FILTER='', DECIDER_VIEW='', SHOW_ARCH=false;
+let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num', GEN_FILTER='', DECIDER_VIEW='', SHOW_ARCH=false, NOTE_EDITING=false;
 function setAttFilter(btn){
   ATT_FILTER=btn.getAttribute('data-att');
   btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
@@ -916,7 +918,7 @@ function renderList(quiet){
 /* auto-refresh every 5s while staff view open, screen on, viewer closed */
 setInterval(()=>{
   const adminVisible=!document.getElementById('adminView').classList.contains('hidden');
-  if(adminVisible && !document.hidden && !VIEWER_OPEN) refreshAdmin(true);
+  if(adminVisible && !document.hidden && !VIEWER_OPEN && !NOTE_EDITING) refreshAdmin(true);
 },5000);
 
 function agencyLine(e){
@@ -1057,27 +1059,31 @@ function adminCard(e,n){
   };
   digWrap.appendChild(digBtn);digWrap.appendChild(digInput);
   info.appendChild(digWrap);
-  /* ---- agent notes ---- */
+  /* ---- agent notes (manual save) ---- */
   const noteWrap=document.createElement('div');noteWrap.className='note-wrap';
   const noteLbl=document.createElement('div');noteLbl.className='note-lbl';noteLbl.textContent='NOTES';
   const noteBox=document.createElement('textarea');noteBox.className='note-box';noteBox.value=e.notes||'';
   noteBox.placeholder='Add notes about this model…';
   const noteStat=document.createElement('span');noteStat.className='note-stat';
-  let noteTimer=null, lastSaved=e.notes||'';
+  const noteBtn=document.createElement('button');noteBtn.className='note-save';noteBtn.textContent='Save notes';
+  let lastSaved=e.notes||'';
   async function saveNote(){
-    if(noteBox.value===lastSaved) return;
-    noteStat.textContent='saving…';
+    if(noteBox.value===lastSaved){ noteStat.textContent='no changes'; setTimeout(()=>{noteStat.textContent='';},1200); return; }
+    noteBtn.disabled=true; noteStat.textContent='saving…';
     try{
       await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,body:JSON.stringify({fields:{'Agent Notes':noteBox.value}})});
       lastSaved=noteBox.value; e.notes=noteBox.value;
       noteStat.textContent='saved ✓';
       setTimeout(()=>{noteStat.textContent='';},1500);
-    }catch(err){ noteStat.textContent='save failed — retry'; }
+    }catch(err){ noteStat.textContent='save failed — tap Save again'; }
+    noteBtn.disabled=false;
   }
-  noteBox.oninput=()=>{ noteStat.textContent='editing…'; clearTimeout(noteTimer); noteTimer=setTimeout(saveNote,1200); };
-  noteBox.onblur=()=>{ clearTimeout(noteTimer); saveNote(); };
+  // pause the background auto-refresh whenever she is in the box, so nothing rebuilds the card mid-typing
+  noteBox.onfocus=()=>{ NOTE_EDITING=true; };
+  noteBox.oninput=()=>{ NOTE_EDITING=true; if(noteBox.value!==lastSaved){ noteStat.textContent='unsaved'; } };
+  noteBtn.onclick=()=>{ saveNote(); NOTE_EDITING=false; };
   noteLbl.appendChild(noteStat);
-  noteWrap.appendChild(noteLbl);noteWrap.appendChild(noteBox);
+  noteWrap.appendChild(noteLbl);noteWrap.appendChild(noteBox);noteWrap.appendChild(noteBtn);
   info.appendChild(noteWrap);
   const del=document.createElement('button');del.className='cdel';
   del.textContent=e.archived?'Un-archive':'Archive';
