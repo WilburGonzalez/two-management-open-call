@@ -387,6 +387,7 @@
     <button class="chip" data-decider="Katie" onclick="setDeciderView(this)">Katie</button>
     <button class="chip" data-decider="Ana" onclick="setDeciderView(this)">Ana</button>
     <button class="chip" data-decider="Wilbur" onclick="setDeciderView(this)">Wilbur</button>
+    <button class="chip" data-decider="Patty" onclick="setDeciderView(this)">Patty</button>
     <button class="chip" data-decider="NY" onclick="setDeciderView(this)">NY</button>
     <button class="chip" data-decider="Germany" onclick="setDeciderView(this)">Germany</button>
     <button class="chip" data-decider="Scandi" onclick="setDeciderView(this)">Scandi</button>
@@ -431,12 +432,12 @@ const HDRS     = { "Authorization":"Bearer "+AIRTABLE_TOKEN, "Content-Type":"app
 const F_SELFIE = "fldr9h94oT9Jm3deK";   // Selfie attachment field
 const F_PHOTOS = "fldGVRWT6nt46stm7";   // Additional Photos attachment field
 const F_DIGITALS = "fldCxv87OEPeRLUBX"; // Agent-uploaded Digitals attachment field
-const AGENTS   = ["Katie","Ana","Wilbur"];                 // in-person; their decision also marks "seen"
+const AGENTS   = ["Katie","Ana","Wilbur","Patty"];         // in-person; their decision also marks "seen"
 const REMOTE_DECIDERS = ["NY","Germany","Scandi"];          // remote markets, decide later
 const ALL_DECIDERS = AGENTS.concat(REMOTE_DECIDERS);
-const DECIDER_FIELD = {Katie:'Katie Decision',Ana:'Ana Decision',Wilbur:'Wilbur Decision',
+const DECIDER_FIELD = {Katie:'Katie Decision',Ana:'Ana Decision',Wilbur:'Wilbur Decision',Patty:'Patty Decision',
   NY:'NY Decision',Germany:'Germany Decision',Scandi:'Scandi Decision'};
-const DECIDER_LABEL = {};
+const DECIDER_LABEL = {Patty:"Patty's Picks"};
 const DECIDER_OPTS  = {};
 
 const SELFIE_DIM=900, SELFIE_Q=0.8;     // selfie: screening quality
@@ -750,7 +751,7 @@ async function loadEntries(){
         portfolio:f['Portfolio Link']||'',
         seenBy:f['Seen By']||[],
         qn:f['Queue Number']||null,
-        decisions:{Katie:f['Katie Decision']||'',Ana:f['Ana Decision']||'',Wilbur:f['Wilbur Decision']||'',
+        decisions:{Katie:f['Katie Decision']||'',Ana:f['Ana Decision']||'',Wilbur:f['Wilbur Decision']||'',Patty:f['Patty Decision']||'',
           NY:f['NY Decision']||'',Germany:f['Germany Decision']||'',Scandi:f['Scandi Decision']||''},
         motherAgent:f['Mother Agent']||'', motherAgentCountry:f['Mother Agent Country']||'',
         agMilan:f['Milan Agency']||'', agNY:f['NY Agency']||'', agLA:f['LA Agency']||'',
