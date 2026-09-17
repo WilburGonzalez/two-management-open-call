@@ -781,7 +781,7 @@ function exitAdmin(){
   document.getElementById('signinView').classList.remove('hidden');
 }
 
-let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num', GEN_FILTER='', DECIDER_VIEW='', SHOW_ARCH=false;
+let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num', GEN_FILTER='', DECIDER_VIEW='', SHOW_ARCH=false, NOTE_EDITING=false;
 function setAttFilter(btn){
   ATT_FILTER=btn.getAttribute('data-att');
   btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
@@ -908,7 +908,7 @@ function renderList(quiet){
 /* auto-refresh every 5s while staff view open, screen on, viewer closed */
 setInterval(()=>{
   const adminVisible=!document.getElementById('adminView').classList.contains('hidden');
-  if(adminVisible && !document.hidden && !VIEWER_OPEN) refreshAdmin(true);
+  if(adminVisible && !document.hidden && !VIEWER_OPEN && !NOTE_EDITING) refreshAdmin(true);
 },5000);
 
 function agencyLine(e){
@@ -1045,7 +1045,7 @@ function adminCard(e,n){
     digBtn.disabled=false;
     digBtn.textContent='📷 Add more digitals ('+(e.digitals?e.digitals.length:0)+')';
     if(ok<files.length){ alert(ok+' of '+files.length+' uploaded. '+failMsg+' Tap the button and retry the missing ones.'); }
-    // no auto-refresh: the shots already show locally, and a reload would jump the scroll position
+    setTimeout(()=>refreshAdmin(true), 4000);
   };
   digWrap.appendChild(digBtn);digWrap.appendChild(digInput);
   info.appendChild(digWrap);
@@ -1066,8 +1066,9 @@ function adminCard(e,n){
       setTimeout(()=>{noteStat.textContent='';},1500);
     }catch(err){ noteStat.textContent='save failed — retry'; }
   }
-  noteBox.oninput=()=>{ noteStat.textContent='editing…'; clearTimeout(noteTimer); noteTimer=setTimeout(saveNote,1200); };
-  noteBox.onblur=()=>{ clearTimeout(noteTimer); saveNote(); };
+  noteBox.onfocus=()=>{ NOTE_EDITING=true; };
+  noteBox.oninput=()=>{ NOTE_EDITING=true; noteStat.textContent='editing…'; clearTimeout(noteTimer); noteTimer=setTimeout(saveNote,1500); };
+  noteBox.onblur=()=>{ clearTimeout(noteTimer); saveNote().then(()=>{ NOTE_EDITING=false; }); };
   noteLbl.appendChild(noteStat);
   noteWrap.appendChild(noteLbl);noteWrap.appendChild(noteBox);
   info.appendChild(noteWrap);
