@@ -124,6 +124,9 @@
   .dig-wrap{width:100%;margin:10px 0;}
   .dig-strip{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
   .dig-thumb{width:70px;height:93px;object-fit:cover;border:1px solid #ccc;cursor:pointer;border-radius:3px;}
+  .dig-cell{display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .dig-selfie{font-size:9px;letter-spacing:.04em;background:#fff;color:#333;border:1px solid #999;border-radius:3px;padding:2px 5px;cursor:pointer;}
+  .dig-selfie:disabled{opacity:.7;}
   .dig-btn{font-size:12px;font-weight:600;background:#111;color:#fff;border:none;
     padding:10px 16px;border-radius:6px;cursor:pointer;}
   .dig-btn:disabled{opacity:.6;}
@@ -1023,7 +1026,24 @@ function adminCard(e,n){
   /* ---- agent digitals upload ---- */
   const digWrap=document.createElement('div');digWrap.className='dig-wrap';
   const digStrip=document.createElement('div');digStrip.className='dig-strip';
-  (e.digitals||[]).forEach(u=>{const im=document.createElement('img');im.src=u;im.className='dig-thumb';im.onclick=()=>window.open(u,'_blank');digStrip.appendChild(im);});
+  function makeDigItem(u){
+    const cell=document.createElement('div');cell.className='dig-cell';
+    const im=document.createElement('img');im.src=u;im.className='dig-thumb';
+    im.onclick=()=>{ if(u.slice(0,5)==='data:'){const w=window.open();if(w)w.document.write('<img src="'+u+'" style="max-width:100%">');} else window.open(u,'_blank'); };
+    const sb=document.createElement('button');sb.className='dig-selfie';sb.textContent='★ selfie';
+    sb.onclick=async()=>{
+      sb.disabled=true;sb.textContent='setting…';
+      try{
+        if(u.slice(0,5)==='data:'){ await uploadAttachment(e.id,F_SELFIE,u,'selfie.jpg'); }
+        else { await fetch(API+'/'+e.id,{method:'PATCH',headers:HDRS,body:JSON.stringify({fields:{'Selfie':[{url:u}]}})}); }
+        e.selfie=u; sb.textContent='✓ selfie';
+        const cardPhoto=card.querySelector('.cphoto img'); if(cardPhoto) cardPhoto.src=u;
+      }catch(err){ sb.textContent='failed'; sb.disabled=false; }
+    };
+    cell.appendChild(im);cell.appendChild(sb);
+    return cell;
+  }
+  (e.digitals||[]).forEach(u=>digStrip.appendChild(makeDigItem(u)));
   digWrap.appendChild(digStrip);
   const digBtn=document.createElement('button');digBtn.className='dig-btn';
   digBtn.textContent=(e.digitals&&e.digitals.length)?('📷 Add more digitals ('+e.digitals.length+')'):'📷 Add digitals (4)';
@@ -1043,14 +1063,12 @@ function adminCard(e,n){
       }
       if(!dataUrl){ failMsg='Could not read photo '+(i+1)+'.'; continue; }
       // show immediately from local copy
-      const im=document.createElement('img');im.src=dataUrl;im.className='dig-thumb';
-      im.onclick=()=>{const w=window.open();if(w)w.document.write('<img src="'+dataUrl+'" style="max-width:100%">');};
-      digStrip.appendChild(im);
+      digStrip.appendChild(makeDigItem(dataUrl));
       e.digitals=e.digitals||[]; e.digitals.push(dataUrl);
       try{
         await uploadAttachment(e.id,F_DIGITALS,dataUrl,'digital-'+(Date.now())+'-'+(i+1)+'.jpg');
         ok++;
-      }catch(err){ failMsg='Upload failed on photo '+(i+1)+' ('+(err&&err.message?err.message:'network')+').'; im.style.opacity='0.4'; }
+      }catch(err){ failMsg='Upload failed on photo '+(i+1)+' ('+(err&&err.message?err.message:'network')+').'; }
     }
     digBtn.disabled=false;
     digBtn.textContent='📷 Add more digitals ('+(e.digitals?e.digitals.length:0)+')';
