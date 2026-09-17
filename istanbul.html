@@ -1045,7 +1045,7 @@ function adminCard(e,n){
     digBtn.disabled=false;
     digBtn.textContent='📷 Add more digitals ('+(e.digitals?e.digitals.length:0)+')';
     if(ok<files.length){ alert(ok+' of '+files.length+' uploaded. '+failMsg+' Tap the button and retry the missing ones.'); }
-    setTimeout(()=>refreshAdmin(true), 4000);
+    // no auto-refresh: the shots already show locally, and a reload would jump the scroll position
   };
   digWrap.appendChild(digBtn);digWrap.appendChild(digInput);
   info.appendChild(digWrap);
