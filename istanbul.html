@@ -772,16 +772,24 @@ async function loadEntries(){
 function goAdmin(){
   const code=prompt('Staff passcode:');
   if(code!=='two'){ if(code!==null) alert('Incorrect passcode.'); return; }
+  try{ localStorage.setItem('istanbulStaff','1'); }catch(e){}
+  document.getElementById('signinView').classList.add('hidden');
+  document.getElementById('adminView').classList.remove('hidden');
+  refreshAdmin();
+}
+function openAdminNoPrompt(){
   document.getElementById('signinView').classList.add('hidden');
   document.getElementById('adminView').classList.remove('hidden');
   refreshAdmin();
 }
 function exitAdmin(){
+  try{ localStorage.removeItem('istanbulStaff'); }catch(e){}
   document.getElementById('adminView').classList.add('hidden');
   document.getElementById('signinView').classList.remove('hidden');
 }
+try{ if(localStorage.getItem('istanbulStaff')==='1'){ if(document.readyState==='loading'){ window.addEventListener('DOMContentLoaded',openAdminNoPrompt); } else { openAdminNoPrompt(); } } }catch(e){}
 
-let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num', GEN_FILTER='', DECIDER_VIEW='', SHOW_ARCH=false, NOTE_EDITING=false;
+let UNSEEN_ONLY=false, DEC_FILTER='', VIEWER_OPEN=false, REFRESHING=false, SEARCH_Q='', CACHE=[], ATT_FILTER='', SORT_BY='num', GEN_FILTER='', DECIDER_VIEW='', SHOW_ARCH=false;
 function setAttFilter(btn){
   ATT_FILTER=btn.getAttribute('data-att');
   btn.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
@@ -908,7 +916,7 @@ function renderList(quiet){
 /* auto-refresh every 5s while staff view open, screen on, viewer closed */
 setInterval(()=>{
   const adminVisible=!document.getElementById('adminView').classList.contains('hidden');
-  if(adminVisible && !document.hidden && !VIEWER_OPEN && !NOTE_EDITING) refreshAdmin(true);
+  if(adminVisible && !document.hidden && !VIEWER_OPEN) refreshAdmin(true);
 },5000);
 
 function agencyLine(e){
@@ -1066,9 +1074,8 @@ function adminCard(e,n){
       setTimeout(()=>{noteStat.textContent='';},1500);
     }catch(err){ noteStat.textContent='save failed — retry'; }
   }
-  noteBox.onfocus=()=>{ NOTE_EDITING=true; };
-  noteBox.oninput=()=>{ NOTE_EDITING=true; noteStat.textContent='editing…'; clearTimeout(noteTimer); noteTimer=setTimeout(saveNote,1500); };
-  noteBox.onblur=()=>{ clearTimeout(noteTimer); saveNote().then(()=>{ NOTE_EDITING=false; }); };
+  noteBox.oninput=()=>{ noteStat.textContent='editing…'; clearTimeout(noteTimer); noteTimer=setTimeout(saveNote,1200); };
+  noteBox.onblur=()=>{ clearTimeout(noteTimer); saveNote(); };
   noteLbl.appendChild(noteStat);
   noteWrap.appendChild(noteLbl);noteWrap.appendChild(noteBox);
   info.appendChild(noteWrap);
